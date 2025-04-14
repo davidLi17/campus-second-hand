@@ -1,0 +1,38 @@
+{
+  "extends": "@vue/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    // 允许编译 JavaScript 文件
+    "allowJs": true,
+
+    // 生成源映射文件，便于调试
+    "sourceMap": true,
+
+    // 设置基准目录为当前目录
+    "baseUrl": ".",
+
+    // 路径别名配置，让 "@/" 指向 "src/" 目录
+    // 这样可以使用 "@/components/xxx" 来导入 "src/components/xxx"
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    // 指定要包含的库文件
+    "lib": [
+      "esnext", // 最新的 ECMAScript 特性
+      "dom" // DOM 相关的类型定义
+    ],
+
+    // 引入额外的类型声明
+    "types": [
+      "@dcloudio/types", // uni-app 官方类型声明
+      "miniprogram-api-typings", // 微信小程序类型声明
+      "@uni-helper/uni-app-types", // uni-app 辅助类型声明
+      "@uni-helper/uni-ui-types" // uni-ui 组件库类型声明
+    ]
+  },
+  "vueCompilerOptions": {
+    // experimentalRuntimeMode 已废弃，请升级 Vue - Official 插件至最新版本
+    "plugins": ["@uni-helper/uni-app-types/volar-plugin"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+}
