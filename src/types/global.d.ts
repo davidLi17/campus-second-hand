@@ -18,3 +18,24 @@ export type PageParams = {
   /** 页大小：默认值为 10 */
   pageSize?: number
 }
+
+export interface GoodsItem {
+  id: number
+  name: string
+  desc: string
+  price: number
+  originalPrice?: number
+  picture: string
+  pictures: string[]
+  school: string
+  createdAt: string | Date
+  status: number // 0-在售 1-已售 2-下架
+  sellerId: number
+  categoryId: number
+  updateTime?: string
+}
+
+export interface GoodsListResult {
+  list: GoodsItem[]
+  total: number
+}
