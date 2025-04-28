@@ -46,6 +46,7 @@ export const getHomeGoodsGuessLikeAPI = (data?: PageParams) => {
     data,
   })
 }
+
 /** 猜你喜欢-商品类型 */
 export type GuessItem = {
   /** 商品描述 */

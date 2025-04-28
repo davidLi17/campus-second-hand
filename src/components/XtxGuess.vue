@@ -1,5 +1,51 @@
 <script setup lang="ts">
-//
+import { getHomeGoodsGuessLikeAPI } from '@/services/home'
+import type { PageParams } from '@/types/global'
+import type { GuessItem } from '@/types/home'
+import { onMounted, ref } from 'vue'
+const pageParams: Required<PageParams> = {
+  page: 1,
+  pageSize: 10,
+}
+const guessList = ref<GuessItem[]>([])
+const finish = ref(false) //已经结束标记
+const getHomeGoodsGuessLikeData = async () => {
+  if (finish.value === true) {
+    return uni.showToast({
+      title: '没有更多数据了',
+      icon: 'none',
+    })
+  }
+  try {
+    const res = await getHomeGoodsGuessLikeAPI(pageParams)
+    guessList.value.push(...res.result.items)
+    if (pageParams.page < res.result.page) {
+      pageParams.page++
+    } else {
+      finish.value = true
+    }
+  } catch (error) {
+    console.error('LHG:components/XtxGuess.vue error:::', error)
+  }
+}
+const resetData = () => {
+  pageParams.page = 1
+  guessList.value = []
+  finish.value = false
+  getHomeGoodsGuessLikeData()
+  uni.showToast({
+    title: '数据已重置',
+    icon: 'success',
+  })
+}
+onMounted(() => {
+  getHomeGoodsGuessLikeData()
+})
+//定义子组件具有的方法
+defineExpose({
+  getMore: getHomeGoodsGuessLikeData,
+  resetData,
+})
 </script>
 
 <template>
@@ -11,27 +57,25 @@
   <view class="guess">
     <navigator
       class="guess-item"
-      v-for="item in 10"
-      :key="item"
-      :url="`/pages/goods/goods?id=4007498`"
+      v-for="item in guessList"
+      :key="item.id"
+      :url="`/pages/goods/goods?id=${item.id}`"
     >
-      <image
-        class="image"
-        mode="aspectFill"
-        src="https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_big_1.jpg"
-      ></image>
+      <image class="image" mode="aspectFill" :src="item.picture"></image>
 
-      <view class="name"> 德国THORE男表 超薄手表男士休闲简约夜光石英防水直径40毫米 </view>
+      <view class="name"> {{ item.name }} </view>
 
       <view class="price">
         <text class="small">¥</text>
 
-        <text>899.00</text>
+        <text>{{ item.price }}</text>
       </view>
     </navigator>
   </view>
 
-  <view class="loading-text"> 正在加载... </view>
+  <view class="loading-text">
+    {{ finish ? '没有更多数据了' : '正在加载数据...' }}
+  </view>
 </template>
 
 <style lang="scss">

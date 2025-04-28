@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { CategoryItem } from '@/types/home'
 
-defineProps<{
+const props = defineProps<{
   list: CategoryItem[]
 }>()
+
+const { list } = props
+console.log('LHG:componets/CategoryPanel.vue list:::', list)
 </script>
 
 <template>

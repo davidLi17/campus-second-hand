@@ -2,9 +2,10 @@
 import type { HotItem } from '@/types/home'
 
 // 定义 props 接收数据
-defineProps<{
+const props = defineProps<{
   list: HotItem[]
 }>()
+console.log('LHG:componets/HotPanel.vue list:::', props.list)
 </script>
 
 <template>
