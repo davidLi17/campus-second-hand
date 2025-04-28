@@ -1,10 +1,11 @@
 <script setup lang="ts">
-//
-const { safeAreaInsets } = uni.getSystemInfoSync()
+import { ref } from 'vue'
+const systemInfo = uni.getSystemInfoSync()
+const safeAreaInsets = ref(systemInfo.safeAreaInsets)
 </script>
 
 <template>
-  <view class="navbar" :style="{ paddingTop: safeAreaInsets.top + 'px' }">
+  <view v-if="safeAreaInsets" class="navbar" :style="{ paddingTop: safeAreaInsets.top + 'px' }">
     <!-- logo文字 -->
     <view class="logo">
       <image class="logo-image" src="@/static/images/logo.png"></image>

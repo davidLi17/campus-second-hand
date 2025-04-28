@@ -30,9 +30,9 @@
       "@uni-helper/uni-ui-types" // uni-ui 组件库类型声明
     ]
   },
-  "vueCompilerOptions": {
-    // experimentalRuntimeMode 已废弃，请升级 Vue - Official 插件至最新版本
-    "plugins": ["@uni-helper/uni-app-types/volar-plugin"]
-  },
+ "vueCompilerOptions": {
+"nativeTags": ["block", "component", "template", "slot"],
+"plugins": ["@uni-helper/uni-app-types/volar-plugin"]
+},
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
