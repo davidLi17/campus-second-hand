@@ -1,4 +1,6 @@
-namespace Paths {
+import type Api from '@/types'
+
+export namespace Paths {
   /**
    ** 接口名称: 添加轮播图信息
    ** 接口地址: /banner/add

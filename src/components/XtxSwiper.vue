@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type Api from '@/services/schema'
+import type Api from '@/types'
+
 const activeIndex = ref(0)
 
 // 当 swiper 下标发生变化时触发

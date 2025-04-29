@@ -600,7 +600,7 @@ export function UserPatchUpdatePassword(params: Api.Paths.APatchUpdatePwd.Reques
  */
 
 /** 根据用户id分页查询订单 - GET /user/member/order */
-export function OrderGetByUserId(params: Api.Paths.AGetOrder.Request) {
+export function getOrderByUserId(params: Api.Paths.AGetOrder.Request) {
   return request<Promise<Api.Paths.AGetOrder.Response>>({
     url: `/user/member/order`,
     method: 'GET',
@@ -609,7 +609,7 @@ export function OrderGetByUserId(params: Api.Paths.AGetOrder.Request) {
 }
 
 /** 生成订单 - POST /user/order */
-export function OrderPostCreate(params: Api.Paths.APostOrder.Request) {
+export function createUserOrder(params: Api.Paths.APostOrder.Request) {
   return request<Promise<Api.Paths.APostOrder.Response>>({
     url: `/user/order`,
     method: 'POST',
@@ -618,7 +618,7 @@ export function OrderPostCreate(params: Api.Paths.APostOrder.Request) {
 }
 
 /** 订单结算页 - GET /user/order/pre */
-export function OrderGetPre(params: Api.Paths.AGetPre.Request & { goodsIds: string }) {
+export function getOrderPre(params: Api.Paths.AGetPre.Request & { goodsIds: string }) {
   return request<Promise<Api.Paths.AGetPre.Response>>({
     url: `/user/order/pre`,
     method: 'GET',
@@ -627,7 +627,7 @@ export function OrderGetPre(params: Api.Paths.AGetPre.Request & { goodsIds: stri
 }
 
 /** 根据id查询订单 - GET /user/order/{id} */
-export function OrderGetById(params: Api.Paths.AGetOrder_Id.Request) {
+export function getOrderById(params: Api.Paths.AGetOrder_Id.Request) {
   return request<Promise<Api.Paths.AGetOrder_Id.Response>>({
     url: `/user/order/${params.id}`,
     method: 'GET',
