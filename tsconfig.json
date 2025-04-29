@@ -23,7 +23,6 @@
     ],
 
     // 引入额外的类型声明
-    "typeRoots": ["./node_modules/@types", "./src/types"],
     "types": [
       "@dcloudio/types", // uni-app 官方类型声明
       "miniprogram-api-typings", // 微信小程序类型声明

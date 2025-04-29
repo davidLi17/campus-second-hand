@@ -1,9 +1,9 @@
-/// <reference path="./paths.d.ts" />
-/// <reference path="./schema.d.ts" />
+import { Schema } from './schema'
+import { Paths } from './paths'
 
 declare namespace Api {
-  export { Paths } from './paths'
-  export { Schema } from './schema'
+  export { Schema }
+  export { Paths }
 }
 
 export default Api

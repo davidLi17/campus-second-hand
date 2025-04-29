@@ -1,4 +1,4 @@
-namespace Schema {
+export namespace Schema {
   // 基础的 Result 泛型接口
   interface Result<T = any> {
     code: number
@@ -307,9 +307,9 @@ namespace Schema {
   type ResultListAddressBook = Result<AddressBook[]>
   type ResultPageResultAddressBook = Result<PageResult<AddressBook>>
 
-  type ResultBanner = Result<Banner>
+  type ResultBanner = Result<BannerVO>
   type ResultListBannerVO = Result<BannerVO[]>
-  type ResultPageResultBanner = Result<PageResult<Banner>>
+  type ResultPageResultBanner = Result<PageResult<BannerVO>>
 
   type ResultCategory = Result<Category>
   type ResultListCategory = Result<Category[]>

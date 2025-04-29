@@ -81,9 +81,9 @@
       }
     },
     {
-      "path": "pages/order/confirm",
+      "path": "pages/order/create/create",
       "style": {
-        "navigationBarTitleText": "confirm"
+        "navigationBarTitleText": "创建订单"
       }
     }
   ],
