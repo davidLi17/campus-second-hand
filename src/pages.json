@@ -1,15 +1,15 @@
 {
 	// 组件自动导入
-  "easycom": {
-    "autoscan": true,
-    "custom": {
-      // uni-ui 规则如下配置  // [!code ++]
-      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
-       // 以 Xtx 开头的组件，在 components 目录中查找
-      "^Xtx(.*)": "@/components/Xtx$1.vue"
-    }
-  },
-  "pages": [
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			// uni-ui 规则如下配置  // [!code ++]
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+			// 以 Xtx 开头的组件，在 components 目录中查找
+			"^Xtx(.*)": "@/components/Xtx$1.vue"
+		}
+	},
+	"pages": [
 		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
 		{
 			"path": "pages/index/index",
@@ -41,6 +41,12 @@
 			"path": "pages/login/login",
 			"style": {
 				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/hot/hot",
+			"style": {
+				"navigationBarTitleText": "热门推荐"
 			}
 		}
 	],

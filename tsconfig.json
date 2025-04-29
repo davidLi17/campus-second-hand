@@ -23,6 +23,7 @@
     ],
 
     // 引入额外的类型声明
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "types": [
       "@dcloudio/types", // uni-app 官方类型声明
       "miniprogram-api-typings", // 微信小程序类型声明
@@ -30,9 +31,9 @@
       "@uni-helper/uni-ui-types" // uni-ui 组件库类型声明
     ]
   },
- "vueCompilerOptions": {
-"nativeTags": ["block", "component", "template", "slot"],
-"plugins": ["@uni-helper/uni-app-types/volar-plugin"]
-},
+  "vueCompilerOptions": {
+    "nativeTags": ["block", "component", "template", "slot"],
+    "plugins": ["@uni-helper/uni-app-types/volar-plugin"]
+  },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
 }

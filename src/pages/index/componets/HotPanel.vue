@@ -5,7 +5,6 @@ import type { HotItem } from '@/types/home'
 const props = defineProps<{
   list: HotItem[]
 }>()
-console.log('LHG:componets/HotPanel.vue list:::', props.list)
 </script>
 
 <template>

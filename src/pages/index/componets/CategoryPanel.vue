@@ -6,7 +6,6 @@ const props = defineProps<{
 }>()
 
 const { list } = props
-console.log('LHG:componets/CategoryPanel.vue list:::', list)
 </script>
 
 <template>

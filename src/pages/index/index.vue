@@ -8,8 +8,10 @@ import { getHomeBannerAPI, getHomeCategoryAPI, getHomeHotAPI } from '@/services/
 import type { XtxGuessInstance } from '@/types/components'
 import PageSkeleton from './componets/PageSkeleton.vue'
 import { onLoad } from '@dcloudio/uni-app'
+import { getAllBanners } from '@/services/services'
+import type Api from '@/types'
 
-const homeBannerList = ref<BannerItem[]>()
+const homeBannerList = ref<Api.Schema.BannerVO[]>()
 const categoryList = ref<CategoryItem[]>()
 const homeHotList = ref<HotItem[]>()
 
@@ -26,6 +28,7 @@ const onScrolltoLower = () => {
 const isTriggered = ref(false)
 const onRefresherRefresh = async () => {
   isTriggered.value = true
+
   guessRef.value?.resetData()
   await Promise.all([getHomeBannerAPI(), getHomeCategoryAPI(), getHomeHotAPI()])
   isTriggered.value = false
@@ -35,8 +38,8 @@ const onRefresherRefresh = async () => {
   })
 }
 const getBannerData = async () => {
-  const bannerRes = await getHomeBannerAPI()
-  homeBannerList.value = bannerRes.result
+  const bannerRes = await getAllBanners()
+  homeBannerList.value = bannerRes
 }
 
 const getCategoryData = async () => {
@@ -46,7 +49,6 @@ const getCategoryData = async () => {
 
 const getHotData = async () => {
   const hotRes = await getHomeHotAPI()
-  console.log('LHG:index/index.vue hotRes:::', hotRes)
   homeHotList.value = hotRes.result
 }
 
