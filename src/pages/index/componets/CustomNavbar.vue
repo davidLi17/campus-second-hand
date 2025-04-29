@@ -2,6 +2,11 @@
 import { ref } from 'vue'
 const systemInfo = uni.getSystemInfoSync()
 const safeAreaInsets = ref(systemInfo.safeAreaInsets)
+const gotoSearch = () => {
+  uni.navigateTo({
+    url: '/pages-sub/search/index',
+  })
+}
 </script>
 
 <template>
@@ -12,8 +17,8 @@ const safeAreaInsets = ref(systemInfo.safeAreaInsets)
       <text class="logo-text">新鲜 · 亲民 · 快捷</text>
     </view>
     <!-- 搜索条 -->
-    <view class="search">
-      <text class="icon-search">搜索商品</text>
+    <view class="search" @click="gotoSearch">
+      <text class="icon-search">搜索教材、电子产品...</text>
       <text class="icon-scan"></text>
     </view>
   </view>

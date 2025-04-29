@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <view class="category">category</view>
+  <view class="category">分类页</view>
 </template>
 
 <style lang="scss">
