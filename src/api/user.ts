@@ -3,6 +3,8 @@ import { buildUrl } from '@/utils/url-utils'
 import { http } from '@/utils/http'
 import type { LoginParams, LoginResult } from '@/types/user'
 
+import type { UpdateUserParams, UpdateUserResult } from '@/api/types/user'
+
 /**
  * 用户登录
  * @param params 登录参数
@@ -36,5 +38,17 @@ export const registerAPI = (params: {
       ...params,
       code: '1', // 固定值，根据API要求保留
     },
+  })
+}
+
+/**
+ * 更新用户信息
+ * @param data 更新参数
+ */
+export const updateUserAPI = (data: UpdateUserParams) => {
+  return http<UpdateUserResult>({
+    method: 'PUT',
+    url: '/user/update',
+    data,
   })
 }

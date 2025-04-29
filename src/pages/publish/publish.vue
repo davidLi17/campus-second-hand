@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useMemberStore } from '@/stores/member'
+import { publishGoodsAPI } from '@/api/goods'
 import { uploadFileAPI } from '@/api/upload'
-import { addGoodsAPI } from '@/api/goods'
+
+const memberStore = useMemberStore()
 
 // 表单数据
 const formData = ref({
@@ -11,7 +14,7 @@ const formData = ref({
   picture: '',
   pictures: [] as string[],
   price: 0,
-  status: 0, // 0-在售 1-已售 2-下架
+  status: 0, // 0-在售
 })
 
 // 分类选项
@@ -26,55 +29,69 @@ const categories = ref([
 
 // 上传状态
 const isUploading = ref(false)
-const uploadProgress = ref(0)
 
 // 上传图片
+// 完善的上传组件逻辑
 const uploadImage = async () => {
   try {
+    // 1. 选择文件
     const res = await uni.chooseImage({
-      count: 9 - formData.value.pictures.length,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
+      count: 1,
+      sizeType: ['compressed'], // 开启压缩
+      sourceType: ['album'],
     })
 
-    isUploading.value = true
-    uploadProgress.value = 0
+    // 2. 检查文件大小
+    const filePath = res.tempFilePaths[0]
+    const fileInfo = await getFileSize(filePath)
 
-    const tempFiles = res.tempFiles
-    const uploadedUrls: string[] = []
-
-    for (const file of tempFiles) {
-      const uploadRes = await uploadFileAPI(file.path, (progress) => {
-        uploadProgress.value = progress
+    if (fileInfo.size > 10 * 1024 * 1024) {
+      return uni.showToast({
+        title: '图片大小不能超过10MB',
+        icon: 'none',
       })
-      uploadedUrls.push(uploadRes.url)
     }
 
-    // 第一张图作为主图
-    if (!formData.value.picture && uploadedUrls.length > 0) {
-      formData.value.picture = uploadedUrls[0]
-    }
+    // 3. 压缩图片（可选）
+    const compressedPath = await compressImage(filePath)
 
-    formData.value.pictures = [...formData.value.pictures, ...uploadedUrls]
+    // 4. 上传
+    const { url } = await uploadFileAPI(compressedPath)
   } catch (error) {
-    uni.showToast({ title: error.message || '上传失败', icon: 'none' })
-  } finally {
-    isUploading.value = false
+    handleUploadError(error)
   }
+}
+
+// 获取文件大小
+const getFileSize = (path: string) => {
+  return new Promise<{ size: number }>((resolve) => {
+    uni.getFileInfo({
+      filePath: path,
+      success: (res) => resolve(res),
+      fail: () => resolve({ size: 0 }),
+    })
+  })
+}
+
+// 图片压缩
+const compressImage = (src: string, quality = 0.7) => {
+  return new Promise<string>((resolve) => {
+    uni.compressImage({
+      src,
+      quality: quality * 100,
+      success: (res) => resolve(res.tempFilePath),
+      fail: () => resolve(src), // 压缩失败返回原图
+    })
+  })
 }
 
 // 移除图片
 const removeImage = (index: number) => {
-  formData.value.pictures.splice(index, 1)
-  // 如果移除的是主图，重新设置主图
-  if (
-    formData.value.picture === formData.value.pictures[index] &&
-    formData.value.pictures.length > 0
-  ) {
-    formData.value.picture = formData.value.pictures[0]
-  } else if (formData.value.pictures.length === 0) {
-    formData.value.picture = ''
+  // 如果移除的是主图，需要重新设置主图
+  if (formData.value.picture === formData.value.pictures[index]) {
+    formData.value.picture = formData.value.pictures[0] || ''
   }
+  formData.value.pictures.splice(index, 1)
 }
 
 // 设置主图
@@ -84,7 +101,7 @@ const setMainImage = (url: string) => {
 
 // 表单验证
 const validateForm = () => {
-  if (!formData.value.name) {
+  if (!formData.value.name.trim()) {
     uni.showToast({ title: '请输入商品名称', icon: 'none' })
     return false
   }
@@ -114,19 +131,25 @@ const submitForm = async () => {
   try {
     uni.showLoading({ title: '发布中...' })
 
-    const res = await addGoodsAPI({
+    // 从memberStore获取卖家ID
+    const sellerId = memberStore.profile?.id
+    if (!sellerId) {
+      throw new Error('请先登录')
+    }
+
+    const res = await publishGoodsAPI({
       ...formData.value,
-      sellerId: uni.getStorageSync('userId') || 0, // 从缓存获取用户ID
+      sellerId,
     })
 
     uni.hideLoading()
-    uni.showToast({ title: '发布成功' })
+    uni.showToast({ title: '发布成功', icon: 'success' })
 
     // 发布成功后返回首页
     setTimeout(() => {
       uni.switchTab({ url: '/pages/index/index' })
     }, 1500)
-  } catch (error) {
+  } catch (error: any) {
     uni.hideLoading()
     uni.showToast({ title: error.message || '发布失败', icon: 'none' })
   }
@@ -146,7 +169,7 @@ const submitForm = async () => {
           <!-- 已上传图片 -->
           <view
             class="image-item"
-            v-for="(url, index) in pictures"
+            v-for="(url, index) in formData.pictures"
             :key="index"
             :class="{ 'main-image': url === formData.picture }"
           >
@@ -164,11 +187,7 @@ const submitForm = async () => {
           </view>
         </view>
 
-        <!-- 上传进度 -->
-        <view class="upload-progress" v-if="isUploading">
-          <progress :percent="uploadProgress" stroke-width="4" activeColor="#27ba9b" />
-          <text class="progress-text">{{ uploadProgress }}%</text>
-        </view>
+        <view class="uploading-text" v-if="isUploading">图片上传中...</view>
       </view>
 
       <!-- 商品基本信息 -->
@@ -226,7 +245,7 @@ const submitForm = async () => {
 
     <!-- 底部操作栏 -->
     <view class="action-bar">
-      <button class="submit-btn" @click="submitForm">发布商品</button>
+      <button class="submit-btn" @click="submitForm" :disabled="isUploading">发布商品</button>
     </view>
   </view>
 </template>
@@ -331,20 +350,11 @@ const submitForm = async () => {
     }
   }
 
-  .upload-progress {
-    display: flex;
-    align-items: center;
-    margin-top: 20rpx;
-
-    progress {
-      flex: 1;
-    }
-
-    .progress-text {
-      font-size: 24rpx;
-      color: #666;
-      margin-left: 20rpx;
-    }
+  .uploading-text {
+    font-size: 24rpx;
+    color: #666;
+    margin-top: 10rpx;
+    text-align: center;
   }
 
   /* 表单元素样式 */
@@ -419,6 +429,10 @@ const submitForm = async () => {
       color: #fff;
       background-color: #27ba9b;
       border-radius: 40rpx;
+
+      &[disabled] {
+        opacity: 0.6;
+      }
     }
   }
 }

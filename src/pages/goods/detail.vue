@@ -92,10 +92,10 @@ const addToCart = () => {
   })
 
   // 实际项目中这里调用加入购物车API
-  addToCartAPI({
-    goodsId: goodsDetail.value.id,
-    quantity: quantity.value,
-  })
+  // addToCartAPI({
+  //   goodsId: goodsDetail.value.id,
+  //   quantity: quantity.value,
+  // })
 
   setTimeout(() => {
     uni.navigateTo({ url: '/pages-sub/my/cart' })

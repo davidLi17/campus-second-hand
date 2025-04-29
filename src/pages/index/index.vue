@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import XtxSearchBar from './componets/XtxSearchBar.vue'
 import XtxBanner from './componets/XtxBanner.vue'
 import XtxCategories from './componets/XtxCategories.vue'
-import XtxGoodsList from './componets/XtxGoodsList.vue'
 import CustomNavbar from './componets/CustomNavbar.vue'
+import HotGoodsList from './componets/HotGoodsList.vue'
 
 // 模拟下拉刷新
 const isRefreshing = ref(false)
@@ -37,12 +37,14 @@ const onLoadMore = () => {
     <XtxCategories />
 
     <!-- 商品列表 -->
-    <XtxGoodsList
+    <!-- <XtxGoodsList
       @refresh="onRefresh"
       @load-more="onLoadMore"
       :refreshing="isRefreshing"
       :loading="isLoading"
-    />
+    /> -->
+
+    <HotGoodsList />
   </view>
 </template>
 
