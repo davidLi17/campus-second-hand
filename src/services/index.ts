@@ -1,5 +1,4 @@
 import { useMemberStore } from '@/stores'
-import type { Data } from '@/apis/types'
 
 // 基础配置
 const BASE_CONFIG = {
@@ -47,13 +46,13 @@ const showError = (message: string) => {
 
 // HTTP请求封装
 export const http = <T>(options: UniApp.RequestOptions) => {
-  return new Promise<Data<T>>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     uni.request({
       ...options,
       success(res) {
         // 请求成功
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data as Data<T>)
+          resolve(res.data as T)
           return
         }
 
@@ -68,7 +67,7 @@ export const http = <T>(options: UniApp.RequestOptions) => {
         }
 
         // 其他错误
-        showError((res.data as Data<T>).msg || '请求错误')
+        showError((res.data as Api.Schema.Result)?.message || '请求错误')
         reject(res)
       },
       fail(err) {
@@ -78,3 +77,5 @@ export const http = <T>(options: UniApp.RequestOptions) => {
     })
   })
 }
+const request = http
+export default request
