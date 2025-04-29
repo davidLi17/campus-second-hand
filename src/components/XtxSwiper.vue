@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { BannerItem } from '@/types/home'
 import { ref } from 'vue'
-
+import type Api from '@/services/schema'
 const activeIndex = ref(0)
 
 // 当 swiper 下标发生变化时触发
@@ -11,7 +10,7 @@ const onChange: UniHelper.SwiperOnChange = (ev) => {
 }
 // 定义 props 接收
 defineProps<{
-  list: BannerItem[]
+  list: Api.Schema.BannerVO[]
 }>()
 </script>
 
