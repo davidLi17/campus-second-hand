@@ -25,3 +25,24 @@ export const deleteCartItemAPI = (id: number) => {
     data: { id },
   })
 }
+
+/**
+ * 添加商品到购物车
+ * @param goodId 商品ID
+ */
+export const addToCartAPI = (goodId: number) => {
+  return http<{
+    code: number
+    data: null
+    message: string
+  }>({
+    method: 'POST',
+    url: '/user/shoppingCart/add',
+    header: {
+      'Content-Type': 'application/json',
+    },
+    data: {
+      goodId,
+    },
+  })
+}

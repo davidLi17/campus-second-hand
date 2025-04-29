@@ -1,55 +1,66 @@
+// src/api/goods.ts
 import { http } from '@/utils/http'
 
-import type { GoodsListResult } from '@/types/goods'
-
-// 获取商品详情
-export const getGoodsDetailAPI = (id: string) => {
-  return http<any>({
-    method: 'GET',
-    url: `/goods/detail/${id}`,
-  })
-}
-
-// 获取分类商品
-export const getCategoryGoodsAPI = (type: string) => {
+/**
+ * 获取全部商品列表
+ */
+export const getGoodsListAPI = () => {
   return http<{
-    list: any[]
-    total: number
+    code: number
+    data: Array<{
+      id: number
+      name: string
+      categoryPic: string
+      goods: Array<{
+        id: number
+        name: string
+        picture: string
+        price: number
+        desc: string
+        categoryId: number
+        // 其他商品字段...
+      }>
+    }>
+    message: string
   }>({
     method: 'GET',
-    url: '/goods/category',
-    data: { type },
+    url: '/home/goods',
   })
 }
 
-// 添加商品
-export const addGoodsAPI = (data: {
-  categoryId: number
-  name: string
-  desc: string
-  picture: string
-  pictures: string[]
-  price: number
-  sellerId: number
-  status?: number
-}) => {
-  return http({
-    method: 'POST',
-    url: '/user/goods/add',
-    data,
-  })
-}
+export const addGoodsAPI = () => {}
 
-// 获取商品列表
-export const getGoodsListAPI = (params: {
-  page: number
-  pageSize: number
-  categoryId?: number
-  school?: string
-}) => {
-  return http<GoodsListResult>({
+/**
+ * 获取商品详情
+ * @param id 商品ID
+ */
+export const getGoodsDetailAPI = (id: number) => {
+  return http<{
+    code: number
+    data: {
+      id: number
+      name: string
+      desc: string
+      price: number
+      picture: string
+      pictures: string[]
+      categoryId: number
+      categoryName: string
+      collectCount: number
+      commentCount: number
+      likeCount: number
+      sellerId: number
+      sellerName: string
+      status: number
+    }
+    message: string
+  }>({
     method: 'GET',
-    url: '/goods/list',
-    data: params,
+    url: `/user/goods?id=${id}`,
+    headers: {
+      'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+      Accept: '*/*',
+      Connection: 'keep-alive',
+    },
   })
 }
