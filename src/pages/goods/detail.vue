@@ -1,55 +1,81 @@
+<!-- src/pages/goods/detail.vue -->
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import { getGoodsDetailAPI } from '@/api/goods'
+
+import { addToCartAPI } from '@/api/cart'
 
 // 商品详情数据
-const goodsDetail = ref({
-  id: 1,
-  name: 'iPhone 13 Pro 256GB',
-  desc: '99新，国行在保至2024年3月，无划痕无磕碰，全套包装配件齐全',
-  price: 4999,
-  originalPrice: 8799,
-  images: [
-    'https://imgservice.suning.cn/uimg1/b2c/image/iphone13-pro.jpg',
-    'https://imgservice.suning.cn/uimg1/b2c/image/iphone13-pro-back.jpg',
-    'https://imgservice.suning.cn/uimg1/b2c/image/iphone13-pro-detail.jpg',
-  ],
-  seller: {
-    id: 1001,
-    name: '张三',
-    avatar: 'https://imgservice.suning.cn/uimg1/b2c/image/avatar.jpg',
-    rating: 4.8,
-    sales: 128,
-  },
-  stock: 5,
-  specs: [
-    { name: '颜色', value: '远峰蓝' },
-    { name: '内存', value: '256GB' },
-    { name: '版本', value: '国行' },
-  ],
-  status: 0, // 0-在售 1-已售 2-下架
-})
+const goodsDetail = ref<{
+  id: number
+  name: string
+  desc: string
+  price: number
+  picture: string
+  pictures: string[]
+  categoryId: number
+  categoryName: string
+  collectCount: number
+  commentCount: number
+  likeCount: number
+  sellerId: number
+  sellerName: string
+  status: number
+}>()
+
+// 加载状态
+const loading = ref(false)
+const error = ref(false)
 
 // 选择的数量
 const quantity = ref(1)
-// 选择的规格
-const selectedSpecs = ref({})
 
 // 页面加载时获取参数
 onLoad((options) => {
-  console.log('商品ID:', options.id)
-  // 这里应该调用API获取商品详情
-  // fetchGoodsDetail(options.id)
+  if (!options.id) {
+    uni.showToast({
+      title: '缺少商品ID参数',
+      icon: 'none',
+    })
+    uni.navigateBack()
+    return
+  }
 
-  // 设置页面标题
-  uni.setNavigationBarTitle({
-    title: goodsDetail.value.name,
-  })
+  fetchGoodsDetail(Number(options.id))
 })
+
+// 获取商品详情
+const fetchGoodsDetail = async (id: number) => {
+  try {
+    loading.value = true
+    error.value = false
+
+    const res = await getGoodsDetailAPI(id)
+
+    if (res.code === 0 && res.data) {
+      goodsDetail.value = res.data
+      uni.setNavigationBarTitle({
+        title: res.data.name,
+      })
+    } else {
+      throw new Error(res.message || '获取商品详情失败')
+    }
+  } catch (err) {
+    console.error('获取商品详情失败:', err)
+    error.value = true
+    uni.showToast({
+      title: '获取商品详情失败',
+      icon: 'none',
+    })
+  } finally {
+    loading.value = false
+  }
+}
 
 // 数量增减
 const changeQuantity = (type: 'add' | 'minus') => {
-  if (type === 'add' && quantity.value < goodsDetail.value.stock) {
+  if (type === 'add') {
     quantity.value++
   } else if (type === 'minus' && quantity.value > 1) {
     quantity.value--
@@ -58,29 +84,28 @@ const changeQuantity = (type: 'add' | 'minus') => {
 
 // 加入购物车
 const addToCart = () => {
+  if (!goodsDetail.value) return
+
   uni.showToast({
     title: '已加入购物车',
     icon: 'success',
   })
 
-  // 这里应该调用加入购物车API
-  // addToCartAPI({
-  //   goodsId: goodsDetail.value.id,
-  //   quantity: quantity.value,
-  //   specs: selectedSpecs.value
-  // })
+  // 实际项目中这里调用加入购物车API
+  addToCartAPI({
+    goodsId: goodsDetail.value.id,
+    quantity: quantity.value,
+  })
 
-  // 跳转到购物车页面
   setTimeout(() => {
-    uni.switchTab({
-      url: '/pages/cart/cart',
-    })
+    uni.navigateTo({ url: '/pages-sub/my/cart' })
   }, 1500)
 }
 
 // 立即购买
 const buyNow = () => {
-  // 跳转到确认订单页面，携带商品信息
+  if (!goodsDetail.value) return
+
   uni.navigateTo({
     url: `/pages/order/confirm?goodsId=${goodsDetail.value.id}&quantity=${quantity.value}`,
   })
@@ -88,99 +113,175 @@ const buyNow = () => {
 
 // 联系卖家
 const contactSeller = () => {
-  uni.makePhoneCall({
-    phoneNumber: '13800138000', // 实际应该用seller.phone
+  uni.showToast({
+    title: '请联系客服获取卖家联系方式',
+    icon: 'none',
+  })
+}
+
+// 收藏商品
+const toggleCollect = () => {
+  if (!goodsDetail.value) return
+
+  uni.showToast({
+    title: goodsDetail.value.collectCount > 0 ? '已取消收藏' : '已收藏',
+    icon: 'none',
+  })
+
+  // 实际项目中这里调用收藏API
+  // toggleCollectAPI(goodsDetail.value.id)
+}
+
+// 查看分类
+const viewCategory = () => {
+  if (!goodsDetail.value) return
+
+  uni.navigateTo({
+    url: `/pages/category/detail?id=${goodsDetail.value.categoryId}&name=${encodeURIComponent(
+      goodsDetail.value.categoryName,
+    )}`,
   })
 }
 </script>
 
 <template>
   <view class="detail-page">
-    <!-- 商品图片轮播 -->
-    <swiper class="swiper" autoplay circular>
-      <swiper-item v-for="(img, index) in goodsDetail.images" :key="index">
-        <image class="swiper-image" :src="img" mode="aspectFill" />
-      </swiper-item>
-    </swiper>
-
-    <!-- 商品基本信息 -->
-    <view class="goods-info">
-      <view class="price-section">
-        <text class="current-price">¥{{ goodsDetail.price }}</text>
-        <text class="original-price">¥{{ goodsDetail.originalPrice }}</text>
-      </view>
-      <text class="title">{{ goodsDetail.name }}</text>
-      <text class="desc">{{ goodsDetail.desc }}</text>
-
-      <view class="meta">
-        <view class="meta-item">
-          <uni-icons type="star-filled" size="16" color="#ffb400" />
-          <text>4.9分</text>
-        </view>
-        <view class="meta-item">
-          <uni-icons type="cart-filled" size="16" color="#666" />
-          <text>已售{{ goodsDetail.seller.sales }}</text>
-        </view>
-        <view class="meta-item">
-          <uni-icons type="location-filled" size="16" color="#666" />
-          <text>北京</text>
-        </view>
-      </view>
+    <!-- 加载状态 -->
+    <view v-if="loading" class="loading">
+      <uni-load-more status="loading"></uni-load-more>
     </view>
 
-    <!-- 商品规格选择 -->
-    <view class="spec-section">
-      <text class="section-title">规格选择</text>
-      <view class="spec-list">
-        <view class="spec-item" v-for="spec in goodsDetail.specs" :key="spec.name">
-          <text class="spec-name">{{ spec.name }}：</text>
-          <text class="spec-value">{{ spec.value }}</text>
-        </view>
-      </view>
+    <!-- 错误状态 -->
+    <view v-else-if="error" class="error">
+      <image class="error-icon" src="/static/images/error.png" />
+      <text class="error-text">加载失败，请重试</text>
+      <button class="retry-btn" @click="fetchGoodsDetail(goodsDetail?.id || 0)">重新加载</button>
     </view>
 
-    <!-- 卖家信息 -->
-    <view class="seller-info">
-      <image class="avatar" :src="goodsDetail.seller.avatar" />
-      <view class="info">
-        <text class="name">{{ goodsDetail.seller.name }}</text>
-        <view class="rating">
-          <uni-rate :value="goodsDetail.seller.rating" :size="14" readonly />
-          <text>{{ goodsDetail.seller.rating }}</text>
+    <!-- 商品详情内容 -->
+    <template v-else-if="goodsDetail">
+      <!-- 商品图片轮播 -->
+      <swiper class="swiper" autoplay circular>
+        <swiper-item
+          v-for="(img, index) in [goodsDetail.picture, ...goodsDetail.pictures]"
+          :key="index"
+        >
+          <image class="swiper-image" :src="img" mode="aspectFill" />
+        </swiper-item>
+      </swiper>
+
+      <!-- 商品基本信息 -->
+      <view class="goods-info">
+        <view class="price-section">
+          <text class="current-price">¥{{ goodsDetail.price.toFixed(2) }}</text>
+        </view>
+        <text class="title">{{ goodsDetail.name }}</text>
+        <text class="desc">{{ goodsDetail.desc }}</text>
+
+        <view class="meta">
+          <view class="meta-item" @click="viewCategory">
+            <uni-icons type="shop" size="16" color="#666" />
+            <text>{{ goodsDetail.categoryName }}</text>
+          </view>
+          <view class="meta-item">
+            <uni-icons type="heart" size="16" color="#666" />
+            <text>{{ goodsDetail.likeCount }}人喜欢</text>
+          </view>
+          <view class="meta-item">
+            <uni-icons type="chat" size="16" color="#666" />
+            <text>{{ goodsDetail.commentCount }}条评论</text>
+          </view>
         </view>
       </view>
-      <button class="contact-btn" @click="contactSeller">联系卖家</button>
-    </view>
 
-    <!-- 商品详情 -->
-    <view class="detail-section">
-      <text class="section-title">商品详情</text>
-      <rich-text :nodes="goodsDetail.desc"></rich-text>
-      <image
-        v-for="(img, index) in goodsDetail.images"
-        :key="'detail-' + index"
-        :src="img"
-        mode="widthFix"
-      />
-    </view>
+      <!-- 卖家信息 -->
+      <view class="seller-info">
+        <view class="info">
+          <text class="name">商家：{{ goodsDetail.sellerName }}</text>
+        </view>
+        <button class="contact-btn" @click="contactSeller">联系卖家</button>
+      </view>
 
-    <!-- 底部操作栏 -->
-    <view class="action-bar">
-      <button class="action-btn cart" @click="addToCart">
-        <uni-icons type="cart" size="20" color="#fff" />
-        <text>加入购物车</text>
-      </button>
-      <button class="action-btn buy" @click="buyNow">立即购买</button>
-    </view>
+      <!-- 商品详情 -->
+      <view class="detail-section">
+        <text class="section-title">商品详情</text>
+        <rich-text :nodes="goodsDetail.desc"></rich-text>
+        <image
+          v-for="(img, index) in goodsDetail.pictures"
+          :key="'detail-' + index"
+          :src="img"
+          mode="widthFix"
+        />
+      </view>
+
+      <!-- 底部操作栏 -->
+      <view class="action-bar">
+        <view class="action-icon" @click="toggleCollect">
+          <uni-icons
+            :type="goodsDetail.collectCount > 0 ? 'heart-filled' : 'heart'"
+            size="24"
+            :color="goodsDetail.collectCount > 0 ? '#f03c3c' : '#666'"
+          />
+          <text>收藏</text>
+        </view>
+        <view class="quantity-control">
+          <button class="quantity-btn" @click="changeQuantity('minus')">-</button>
+          <text class="quantity">{{ quantity }}</text>
+          <button class="quantity-btn" @click="changeQuantity('add')">+</button>
+        </view>
+        <button class="action-btn cart" @click="addToCart">加入购物车</button>
+        <button class="action-btn buy" @click="buyNow">立即购买</button>
+      </view>
+    </template>
   </view>
 </template>
 
 <style lang="scss" scoped>
 .detail-page {
   padding-bottom: 120rpx;
+  min-height: 100vh;
+  background-color: #f7f7f7;
+
+  .loading {
+    height: 500rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .error {
+    height: 500rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .error-icon {
+      width: 120rpx;
+      height: 120rpx;
+      margin-bottom: 20rpx;
+    }
+
+    .error-text {
+      font-size: 28rpx;
+      color: #999;
+      margin-bottom: 20rpx;
+    }
+
+    .retry-btn {
+      width: 200rpx;
+      height: 60rpx;
+      line-height: 60rpx;
+      font-size: 28rpx;
+      color: #fff;
+      background-color: #27ba9b;
+      border-radius: 30rpx;
+    }
+  }
 
   .swiper {
     height: 750rpx;
+    background-color: #fff;
 
     .swiper-image {
       width: 100%;
@@ -190,6 +291,7 @@ const contactSeller = () => {
 
   .goods-info {
     padding: 30rpx;
+    margin: 20rpx 0;
     background-color: #fff;
 
     .price-section {
@@ -199,15 +301,8 @@ const contactSeller = () => {
 
       .current-price {
         font-size: 48rpx;
-        color: #ff5c5c;
+        color: #f03c3c;
         font-weight: bold;
-      }
-
-      .original-price {
-        font-size: 28rpx;
-        color: #999;
-        text-decoration: line-through;
-        margin-left: 10rpx;
       }
     }
 
@@ -234,6 +329,7 @@ const contactSeller = () => {
         display: flex;
         align-items: center;
         margin-right: 30rpx;
+        padding: 8rpx 0;
 
         uni-icons {
           margin-right: 8rpx;
@@ -242,74 +338,19 @@ const contactSeller = () => {
     }
   }
 
-  .spec-section,
-  .detail-section {
-    margin-top: 20rpx;
-    padding: 30rpx;
-    background-color: #fff;
-
-    .section-title {
-      font-size: 32rpx;
-      font-weight: bold;
-      margin-bottom: 20rpx;
-      display: block;
-    }
-
-    .spec-list {
-      .spec-item {
-        display: flex;
-        padding: 15rpx 0;
-        border-bottom: 1rpx solid #f5f5f5;
-
-        .spec-name {
-          width: 120rpx;
-          color: #999;
-        }
-
-        .spec-value {
-          flex: 1;
-          color: #333;
-        }
-      }
-    }
-
-    image {
-      width: 100%;
-      margin-top: 20rpx;
-    }
-  }
-
   .seller-info {
     display: flex;
     align-items: center;
     padding: 30rpx;
-    margin-top: 20rpx;
+    margin: 20rpx 0;
     background-color: #fff;
-
-    .avatar {
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 50%;
-      margin-right: 20rpx;
-    }
 
     .info {
       flex: 1;
 
       .name {
         font-size: 28rpx;
-        font-weight: bold;
-        display: block;
-        margin-bottom: 8rpx;
-      }
-
-      .rating {
-        display: flex;
-        align-items: center;
-
-        uni-rate {
-          margin-right: 10rpx;
-        }
+        color: #333;
       }
     }
 
@@ -325,6 +366,24 @@ const contactSeller = () => {
     }
   }
 
+  .detail-section {
+    padding: 30rpx;
+    background-color: #fff;
+
+    .section-title {
+      font-size: 32rpx;
+      font-weight: bold;
+      margin-bottom: 20rpx;
+      display: block;
+    }
+
+    image {
+      width: 100%;
+      margin-top: 20rpx;
+      display: block;
+    }
+  }
+
   .action-bar {
     position: fixed;
     left: 0;
@@ -335,27 +394,61 @@ const contactSeller = () => {
     align-items: center;
     background-color: #fff;
     box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+    z-index: 10;
+
+    .action-icon {
+      width: 120rpx;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      text {
+        font-size: 20rpx;
+        color: #666;
+        margin-top: 4rpx;
+      }
+    }
+
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      margin-right: 20rpx;
+
+      .quantity-btn {
+        width: 60rpx;
+        height: 60rpx;
+        line-height: 60rpx;
+        text-align: center;
+        font-size: 32rpx;
+        color: #666;
+        background-color: #f7f7f7;
+        border-radius: 4rpx;
+        padding: 0;
+      }
+
+      .quantity {
+        width: 80rpx;
+        text-align: center;
+        font-size: 28rpx;
+      }
+    }
 
     .action-btn {
       flex: 1;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      height: 80rpx;
+      line-height: 80rpx;
       font-size: 32rpx;
       color: #fff;
       border-radius: 0;
+      padding: 0;
 
       &.cart {
-        background-color: #ffbb33;
+        background-color: #ff9500;
       }
 
       &.buy {
-        background-color: #27ba9b;
-      }
-
-      text {
-        margin-left: 10rpx;
+        background-color: #f03c3c;
       }
     }
   }

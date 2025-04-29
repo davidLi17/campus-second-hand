@@ -1,7 +1,7 @@
 import { useMemberStore } from '@/stores/member'
 
 // 请求基地址
-const baseURL = 'https://your-api-domain.com/api'
+const baseURL = 'http://101.126.18.51:9990'
 
 // 拦截器配置
 const httpInterceptor = {
@@ -29,6 +29,13 @@ uni.addInterceptor('uploadFile', httpInterceptor)
 
 // 通用请求方法
 export const http = <T>(options: UniApp.RequestOptions) => {
+  // 打印完整请求信息
+  console.log('[HTTP Request]', {
+    url: baseURL + options.url,
+    method: options.method,
+    params: options.params,
+    header: options.header,
+  })
   return new Promise<T>((resolve, reject) => {
     uni.request({
       ...options,

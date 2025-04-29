@@ -1,59 +1,107 @@
-<!-- <script setup lang="ts">
+<!-- src/pages/register/register.vue -->
+<script setup lang="ts">
 import { ref } from 'vue'
-import type { RegisterParams } from '@/types/login'
-import { registerAPI } from '@/api/member'
+import { registerAPI } from '@/api/user'
 
-const form = ref<RegisterParams>({
-  account: '',
+// 表单数据
+const form = ref({
+  username: '',
+  email: '',
   password: '',
   confirmPassword: '',
-  nickname: '',
-  studentId: '',
-  schoolId: 0,
-  verificationCode: '',
+  type: '2', // 固定值，根据API要求保留
 })
 
+// 协议同意状态
+const agree = ref(false)
+
+// 注册加载状态
+const loading = ref(false)
+
+// 注册函数
 const onSubmit = async () => {
+  if (!agree.value) {
+    return uni.showToast({ title: '请先同意用户协议', icon: 'none' })
+  }
+
   if (form.value.password !== form.value.confirmPassword) {
     return uni.showToast({ title: '两次密码不一致', icon: 'none' })
   }
 
+  // 简单的邮箱格式验证
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+    return uni.showToast({ title: '请输入有效的邮箱地址', icon: 'none' })
+  }
+
   try {
-    await registerAPI(form.value)
-    uni.showToast({ title: '注册成功' })
-    setTimeout(() => {
-      uni.navigateBack()
-    }, 1500)
-  } catch (error) {
-    uni.showToast({ title: error.message || '注册失败', icon: 'none' })
+    loading.value = true
+
+    const res = await registerAPI({
+      username: form.value.username,
+      email: form.value.email,
+      password: form.value.password,
+      type: form.value.type,
+    })
+
+    if (res.code === 0) {
+      uni.showToast({ title: '注册成功' })
+      setTimeout(() => {
+        uni.navigateBack()
+      }, 1500)
+    } else {
+      throw new Error(res.message || '注册失败')
+    }
+  } catch (error: any) {
+    uni.showToast({
+      title: error.message || '注册失败',
+      icon: 'none',
+    })
+  } finally {
+    loading.value = false
   }
 }
 
-const sendCode = () => {
-  // 发送验证码逻辑
-  uni.showToast({ title: '验证码已发送', icon: 'none' })
+// 跳转到登录页面
+const toLogin = () => {
+  uni.navigateTo({ url: '/pages/login/login' })
 }
 </script>
 
 <template>
   <view class="viewport">
+    <!-- 头部背景 -->
     <view class="header">
-      <image class="logo" src="/static/images/logo.png" mode="aspectFit" />
-      <text class="title">注册账号</text>
+      <image class="logo" src="/static/logo.png" mode="aspectFit" />
+      <text class="title">用户注册</text>
     </view>
 
+    <!-- 注册表单 -->
     <view class="form">
+      <!-- 用户名 -->
       <view class="form-item">
-        <uni-icons class="icon" type="contact" size="20" color="#999" />
+        <uni-icons class="icon" type="person" size="20" color="#999" />
         <input
-          v-model="form.account"
+          v-model="form.username"
           class="input"
           type="text"
-          placeholder="请输入学号/工号"
+          placeholder="请输入用户名"
           placeholder-class="placeholder"
         />
       </view>
 
+      <!-- 邮箱 -->
+      <view class="form-item">
+        <uni-icons class="icon" type="email" size="20" color="#999" />
+        <input
+          v-model="form.email"
+          class="input"
+          type="text"
+          placeholder="请输入邮箱"
+          placeholder-class="placeholder"
+        />
+      </view>
+
+      <!-- 密码 -->
       <view class="form-item">
         <uni-icons class="icon" type="locked" size="20" color="#999" />
         <input
@@ -65,73 +113,141 @@ const sendCode = () => {
         />
       </view>
 
+      <!-- 确认密码 -->
       <view class="form-item">
         <uni-icons class="icon" type="locked" size="20" color="#999" />
         <input
           v-model="form.confirmPassword"
           class="input"
           type="password"
-          placeholder="请确认密码"
+          placeholder="请再次输入密码"
           placeholder-class="placeholder"
         />
       </view>
 
-      <view class="form-item">
-        <uni-icons class="icon" type="person" size="20" color="#999" />
-        <input
-          v-model="form.nickname"
-          class="input"
-          type="text"
-          placeholder="请输入昵称"
-          placeholder-class="placeholder"
-        />
+      <!-- 协议勾选 -->
+      <label class="agreement">
+        <radio :checked="agree" @click="agree = !agree" color="#27ba9b" />
+        <text>我已阅读并同意</text>
+        <text class="link">《用户协议》</text>
+        <text>和</text>
+        <text class="link">《隐私政策》</text>
+      </label>
+
+      <!-- 注册按钮 -->
+      <button class="button" @click="onSubmit" :loading="loading" :disabled="loading">
+        {{ loading ? '注册中...' : '注 册' }}
+      </button>
+
+      <!-- 已有账号 -->
+      <view class="login-link">
+        <text>已有账号？</text>
+        <text class="link" @click="toLogin">去登录</text>
       </view>
-
-      <view class="form-item">
-        <uni-icons class="icon" type="compose" size="20" color="#999" />
-        <input
-          v-model="form.studentId"
-          class="input"
-          type="text"
-          placeholder="请输入真实学号"
-          placeholder-class="placeholder"
-        />
-      </view>
-
-      <view class="form-item code-item">
-        <uni-icons class="icon" type="email" size="20" color="#999" />
-        <input
-          v-model="form.verificationCode"
-          class="input"
-          type="text"
-          placeholder="请输入验证码"
-          placeholder-class="placeholder"
-        />
-        <button class="code-button" @click="sendCode">获取验证码</button>
-      </view>
-
-      <button class="button" @click="onSubmit">注 册</button>
-
-      <view class="login-link"> 已有账号？<text @click="uni.navigateBack()">去登录</text> </view>
     </view>
   </view>
 </template>
 
-<style lang="scss" scoped>
-/* 复用登录页样式，根据需求调整 */
-.code-item {
-  position: relative;
+<style lang="scss">
+.viewport {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8f8f8;
+  padding: 0 40rpx;
 
-  .code-button {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #f5f5f5;
-    color: #666;
-    font-size: 24rpx;
-    padding: 10rpx 20rpx;
-    border-radius: 40rpx;
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 80rpx 0 40rpx;
+
+    .logo {
+      width: 100rpx;
+      height: 100rpx;
+      margin-bottom: 20rpx;
+    }
+
+    .title {
+      font-size: 36rpx;
+      color: #333;
+      font-weight: 500;
+    }
+  }
+
+  .form {
+    background-color: #fff;
+    border-radius: 16rpx;
+    padding: 40rpx;
+    margin-bottom: 40rpx;
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+
+    .form-item {
+      display: flex;
+      align-items: center;
+      height: 90rpx;
+      border-bottom: 1rpx solid #eee;
+      margin-bottom: 30rpx;
+
+      .icon {
+        margin-right: 20rpx;
+      }
+
+      .input {
+        flex: 1;
+        height: 100%;
+        font-size: 28rpx;
+      }
+
+      .placeholder {
+        color: #ccc;
+        font-size: 28rpx;
+      }
+    }
+
+    .agreement {
+      display: flex;
+      align-items: center;
+      margin: 30rpx 0;
+      font-size: 24rpx;
+      color: #666;
+
+      radio {
+        transform: scale(0.8);
+        margin-right: 10rpx;
+      }
+
+      .link {
+        color: #27ba9b;
+        margin: 0 6rpx;
+      }
+    }
+
+    .button {
+      height: 90rpx;
+      line-height: 90rpx;
+      background-color: #27ba9b;
+      color: #fff;
+      font-size: 32rpx;
+      border-radius: 45rpx;
+      margin-top: 20rpx;
+
+      &[disabled] {
+        opacity: 0.6;
+      }
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 30rpx;
+      font-size: 26rpx;
+      color: #666;
+
+      .link {
+        color: #27ba9b;
+        margin-left: 10rpx;
+      }
+    }
   }
 }
-</style> -->
+</style>
