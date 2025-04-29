@@ -31,3 +31,18 @@ export interface MemberProfile {
   roleId: number
   token: string
 }
+
+// 更新用户信息的请求参数类型
+export interface UpdateUserParams {
+  email?: string
+  id: number
+  nickname?: string
+  phone?: string
+}
+
+// 更新用户信息的响应类型
+export interface UpdateUserResult {
+  code: number
+  message: string
+  data: null
+}
