@@ -11,13 +11,34 @@ export interface LoginResult {
   code: number
   message: string
   data: {
+    /**
+     * 主键值
+     */
     id: number
-    username: string
+    /**
+     * 昵称
+     */
     nickname: string
-    phone: string | null
-    userPic: string | null
+    /**
+     * 手机号
+     */
+    phone: string
+    /**
+     * 角色id
+     */
     roleId: number
+    /**
+     * jwt令牌
+     */
     token: string
+    /**
+     * 用户名
+     */
+    username: string
+    /**
+     * 用户头像地址
+     */
+    userPic: string
   }
 }
 

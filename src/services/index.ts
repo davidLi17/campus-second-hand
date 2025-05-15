@@ -1,32 +1,41 @@
-import { useMemberStore } from '@/stores'
+import { useMemberStore } from '@/stores/member'
 
-// 基础配置
-const BASE_CONFIG = {
-  baseURL: 'https://pcapi-xiaotuxian-front-devtest.itheima.net',
-  timeout: 10000,
-  sourceClient: 'miniapp',
-} as const
+// 请求基地址
+const baseURL = 'http://101.126.18.51:9990'
 
-// 请求拦截器
-const httpInterceptor: UniNamespace.InterceptorOptions = {
+// 拦截器配置
+const httpInterceptor = {
+  // 拦截前处理
   invoke(options: UniApp.RequestOptions) {
-    // 拼接完整请求地址
-    options.url = options.url.startsWith('http') ? options.url : BASE_CONFIG.baseURL + options.url
-
-    // 设置超时时间和请求头
-    options.timeout = BASE_CONFIG.timeout
-    options.header = {
-      ...options.header,
-      'source-client': BASE_CONFIG.sourceClient,
+    // 添加请求头
+    if (!options.header) {
+      options.header = {}
     }
 
-    // 添加token认证
+    // 添加token
     const memberStore = useMemberStore()
-    const token = memberStore.profile?.token
-    if (token) {
-      options.header.Authorization = token
+    if (memberStore.token) {
+      options.header.Authorization = `${memberStore.token}`
     }
-
+    if (!memberStore.token && !options.url.includes('/login')) {
+      uni.showToast({
+        title: '请先登录',
+        icon: 'error',
+      })
+      // 保存当前页面路径
+      uni.setStorageSync(
+        'redirectUrl',
+        `/${getCurrentPages()[getCurrentPages().length - 1]?.route}`,
+      )
+      setTimeout(() => {
+        uni.navigateTo({
+          url: '/pages/login/login',
+        })
+      }, 500)
+      return Promise.reject(new Error('未登录'))
+    }
+    // 超时时间
+    options.timeout = 10000
     return options
   },
 }
@@ -35,47 +44,46 @@ const httpInterceptor: UniNamespace.InterceptorOptions = {
 uni.addInterceptor('request', httpInterceptor)
 uni.addInterceptor('uploadFile', httpInterceptor)
 
-// 统一错误提示
-const showError = (message: string) => {
-  uni.showToast({
-    title: message,
-    icon: 'fail',
-    mask: true,
-  })
-}
-
-// HTTP请求封装
+// 通用请求方法
 export const http = <T>(options: UniApp.RequestOptions) => {
+  // 打印完整请求信息
+  console.log('[HTTP Request]', {
+    url: baseURL + options.url,
+    method: options.method,
+    params: options.params,
+    header: options.header,
+  })
   return new Promise<T>((resolve, reject) => {
     uni.request({
       ...options,
+      url: baseURL + options.url,
       success(res) {
-        // 请求成功
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data as T)
-          return
-        }
-
-        // token失效
-        if (res.statusCode === 401) {
-          showError('登录过期')
+        } else if (res.statusCode === 401) {
+          // token过期处理
           const memberStore = useMemberStore()
-          memberStore.clearProfile()
+          memberStore.logout()
           uni.navigateTo({ url: '/pages/login/login' })
           reject(res)
-          return
+        } else {
+          uni.showToast({
+            title: (res.data as any).message || '请求错误',
+            icon: 'none',
+          })
+          reject(res)
         }
-
-        // 其他错误
-        showError((res.data as Api.Schema.Result)?.message || '请求错误')
-        reject(res)
       },
       fail(err) {
-        showError('网络错误,检测网络是否链接')
+        uni.showToast({
+          title: '网络错误，请稍后重试',
+          icon: 'none',
+        })
         reject(err)
       },
     })
   })
 }
+
 const request = http
 export default request

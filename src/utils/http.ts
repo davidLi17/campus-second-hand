@@ -15,11 +15,28 @@ const httpInterceptor = {
     // 添加token
     const memberStore = useMemberStore()
     if (memberStore.token) {
-      options.header.Authorization = `Bearer ${memberStore.token}`
+      options.header.Authorization = `${memberStore.token}`
     }
-
+    if (!memberStore.token && !options.url.includes('/login')) {
+      uni.showToast({
+        title: '请先登录',
+        icon: 'error',
+      })
+      // 保存当前页面路径
+      uni.setStorageSync(
+        'redirectUrl',
+        `/${getCurrentPages()[getCurrentPages().length - 1]?.route}`,
+      )
+      setTimeout(() => {
+        uni.navigateTo({
+          url: '/pages/login/login',
+        })
+      }, 500)
+      return Promise.reject(new Error('未登录'))
+    }
     // 超时时间
     options.timeout = 10000
+    return options
   },
 }
 

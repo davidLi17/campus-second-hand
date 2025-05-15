@@ -4,6 +4,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useMemberStore } from '@/stores/member'
 
 const memberStore = useMemberStore()
+console.log('LHG:my/my.vue  memberStore:::', memberStore)
 
 // 功能菜单项
 const menus = ref([
@@ -32,13 +33,13 @@ const toLogin = () => {
 
 // 跳转到编辑资料页
 const toEditProfile = () => {
-  // if (!memberStore.isLogin) return toLogin()
+  if (!memberStore.isLogin) return toLogin()
   uni.navigateTo({ url: '/pages-sub/my/edit-profile' })
 }
 
 // 处理菜单点击
 const handleMenuClick = (url: string) => {
-  // if (!memberStore.isLogin) return toLogin()
+  if (!memberStore.isLogin) return toLogin()
   uni.navigateTo({ url })
 }
 </script>

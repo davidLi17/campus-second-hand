@@ -1,9 +1,8 @@
 <!-- src/pages/login/login.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
-import { loginAPI } from '@/api/user'
-import { useMemberStore } from '@/stores'
-
+import { useMemberStore } from '@/stores/member'
+import type { LoginParams } from '@/types/user'
 const memberStore = useMemberStore()
 
 // 登录方式
@@ -16,9 +15,6 @@ const form = ref({
   type: 'account' as const,
 })
 
-// 协议同意状态
-const agree = ref(false)
-
 // 登录加载状态
 const loading = ref(false)
 
@@ -28,14 +24,13 @@ const toggleLoginType = () => {
   form.value.account = ''
   form.value.password = ''
 }
+const validateEmail = (email: string) => {
+  const reg = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+  return reg.test(email)
+}
 
-// 登录函数
 // 登录函数（直接调用memberStore.login）
 const onSubmit = async () => {
-  if (!agree.value) {
-    return uni.showToast({ title: '请先同意用户协议', icon: 'none' })
-  }
-
   if (!form.value.account) {
     const field = loginType.value === 'account' ? '用户名' : '邮箱'
     return uni.showToast({ title: `请输入${field}`, icon: 'none' })
@@ -44,7 +39,9 @@ const onSubmit = async () => {
   if (!form.value.password) {
     return uni.showToast({ title: '请输入密码', icon: 'none' })
   }
-
+  if (loginType.value === 'sms' && !validateEmail(form.value.account)) {
+    return uni.showToast({ title: '请输入正确的邮箱格式', icon: 'none' })
+  }
   try {
     loading.value = true
 
@@ -65,20 +62,28 @@ const onSubmit = async () => {
     const res = await memberStore.login(params)
 
     if (res.code === 0) {
+      console.log(
+        'LHG:login/login.vue  uni.getStorageSync(redirectUrl):::',
+        uni.getStorageSync('redirectUrl'),
+      )
       uni.showToast({ title: '登录成功', icon: 'success' })
 
       // 跳转到首页或回跳页面
       const redirectUrl = uni.getStorageSync('redirectUrl') || '/pages/index/index'
       setTimeout(() => {
         uni.reLaunch({ url: redirectUrl })
-      }, 1500)
+      }, 500)
     } else {
+      uni.showToast({
+        title: res.message || '登录失败',
+        icon: 'error',
+      })
       throw new Error(res.message || '登录失败')
     }
   } catch (error: any) {
     uni.showToast({
       title: error.message || '登录失败',
-      icon: 'none',
+      icon: 'error',
     })
   } finally {
     loading.value = false
@@ -147,15 +152,6 @@ const toForget = () => {
           placeholder-class="placeholder"
         />
       </view>
-
-      <!-- 协议勾选 -->
-      <label class="agreement">
-        <radio :checked="agree" @click="agree = !agree" color="#27ba9b" />
-        <text>我已阅读并同意</text>
-        <text class="link">《用户协议》</text>
-        <text>和</text>
-        <text class="link">《隐私政策》</text>
-      </label>
 
       <!-- 登录按钮 -->
       <button class="button" @click="onSubmit" :loading="loading" :disabled="loading">
@@ -259,23 +255,23 @@ const toForget = () => {
       }
     }
 
-    .agreement {
-      display: flex;
-      align-items: center;
-      margin: 30rpx 0;
-      font-size: 24rpx;
-      color: #666;
+    // .agreement {
+    //   display: flex;
+    //   align-items: center;
+    //   margin: 30rpx 0;
+    //   font-size: 24rpx;
+    //   color: #666;
 
-      radio {
-        transform: scale(0.8);
-        margin-right: 10rpx;
-      }
+    //   radio {
+    //     transform: scale(0.8);
+    //     margin-right: 10rpx;
+    //   }
 
-      .link {
-        color: #27ba9b;
-        margin: 0 6rpx;
-      }
-    }
+    //   .link {
+    //     color: #27ba9b;
+    //     margin: 0 6rpx;
+    //   }
+    // }
 
     .button {
       height: 90rpx;

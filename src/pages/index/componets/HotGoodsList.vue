@@ -15,7 +15,7 @@ interface GoodsItem {
 const props = defineProps({
   categoryId: {
     type: Number,
-    default: 1,
+    default: 40,
   },
   pageSize: {
     type: Number,
@@ -41,7 +41,6 @@ const fetchGoodsList = async () => {
     const res = await getHotGoodsAPI({
       id: props.categoryId,
       limit: props.pageSize,
-      page: currentPage.value,
     })
 
     if (res.code === 0) {

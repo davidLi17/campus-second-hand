@@ -33,10 +33,11 @@ const fetchBannerList = async () => {
       page: pagination.value.page,
       pageSize: pagination.value.pageSize,
     })
+    console.log('LHG:componets/XtxBanner.vue  res:::', res)
 
     // 添加数据校验
     if (!res || !res.data) {
-      throw new Error('API返回数据格式不正确')
+      throw new Error(res.message || 'API返回数据格式不正确')
     }
 
     // 确保items存在，如果不存在则设为空数组

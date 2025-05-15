@@ -46,12 +46,6 @@ export const uploadFileAPI = (
       fail: (err) => {
         reject(new Error(err.errMsg || '上传请求失败'))
       },
-      complete: (res) => {
-        // 处理进度
-        if (onProgress && res.progress !== undefined) {
-          onProgress(res.progress)
-        }
-      },
     })
   })
 }

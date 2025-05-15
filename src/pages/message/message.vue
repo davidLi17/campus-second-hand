@@ -1,79 +1,60 @@
 <script setup lang="ts">
-interface MessageItem {
-  type: 'notification' | 'interaction' | 'chat'
-  avatar: string
-  name: string
-  lastMessage: string
-  time: string
-  unread?: number
-  tag?: string
+import { ref, onMounted } from 'vue'
+import { getSessionAPI } from '@/api/chat'
+import type { GetSessionDatum } from '@/types/chat'
+import { formatTime } from '@/utils/time.ts' // 假设有一个时间格式化工具
+
+const sessionList = ref<GetSessionDatum[]>([])
+
+// 获取会话列表
+const loadSessions = async () => {
+  const res = await getSessionAPI()
+  if (res.code === 0) {
+    sessionList.value = res.data
+  }
 }
 
-const messageList: MessageItem[] = [
-  {
-    type: 'notification',
-    avatar: '/static/notification-icon.png',
-    name: '通知消息',
-    lastMessage: '大额优惠劵等你来抢',
-    time: '03-28',
-    unread: 2,
-    tag: '服务号',
-  },
-  {
-    type: 'interaction',
-    avatar: '/static/interaction-icon.png',
-    name: '互动消息',
-    lastMessage: '还没有新通知~',
-    time: '今天',
-  },
-  {
-    type: 'chat',
-    avatar: '/static/default-avatar.png',
-    name: '爱吃猫的鱼',
-    lastMessage: '这个商品还在吗？',
-    time: '12:30',
-    unread: 2,
-  },
-]
+const navigateToChat = (session: GetSessionDatum) => {
+  uni.navigateTo({
+    url: `/pages-sub/chat/chat-detail?sessionId=${session.sessionId}&contactName=${session.contactName}&contactId=${session.contactId}`,
+  })
+}
+
+onMounted(() => {
+  loadSessions()
+})
 </script>
 
 <template>
-  <view class="message-page">
-    <!-- Header -->
+  <view class="chat-list">
     <view class="header">
-      <view class="title-bar">
-        <text class="title">消息</text>
-        <view class="clear-btn">
-          <text>清除未读</text>
-        </view>
-      </view>
-      <!-- Search Bar -->
-      <view class="search-bar">
-        <text class="iconfont icon-search"></text>
-        <input type="text" placeholder="搜索聊天记录/联系人/服务号" />
-      </view>
+      <text class="title">消息</text>
     </view>
 
-    <!-- Message List -->
-    <view class="message-list">
+    <view class="session-list">
       <view
-        class="message-item"
-        v-for="(item, index) in messageList"
-        :key="index"
-        :class="item.type"
+        class="session-item"
+        v-for="session in sessionList"
+        :key="session.sessionId"
+        @tap="navigateToChat(session)"
       >
-        <image class="avatar" :src="item.avatar" mode="aspectFill" />
+        <view class="avatar-wrapper">
+          <image
+            class="avatar"
+            :src="session.contactAvatar || '/static/images/default-avatar.png'"
+            mode="aspectFill"
+          />
+          <view v-if="session.unreadCount && session.unreadCount > 0" class="unread-badge">
+            {{ session.unreadCount > 99 ? '99+' : session.unreadCount }}
+          </view>
+        </view>
         <view class="content">
           <view class="top-line">
-            <view class="name-wrap">
-              <text class="name">{{ item.name }}</text>
-              <text v-if="item.tag" class="tag">{{ item.tag }}</text>
-            </view>
-            <text class="time">{{ item.time }}</text>
+            <text class="name">{{ session.contactName }}</text>
+            <text class="time">{{ formatTime(session.lastUpdateDate) }}</text>
           </view>
           <view class="bottom-line">
-            <text class="last-message">{{ item.lastMessage }}</text>
-            <view class="unread" v-if="item.unread">{{ item.unread }}</view>
+            <text class="last-message">{{ session.lastMessage || '暂无消息' }}</text>
           </view>
         </view>
       </view>
@@ -82,158 +63,110 @@ const messageList: MessageItem[] = [
 </template>
 
 <style lang="scss">
-.message-page {
-  background-color: #f8f8f8;
+.chat-list {
+  background-color: #f7f7f7;
   min-height: 100vh;
-  padding-bottom: 100rpx;
 
   .header {
-    background-color: #ffffff;
-    padding: 20rpx 30rpx;
+    background-color: #fff;
+    padding: 32rpx 32rpx 16rpx 32rpx;
+    border-bottom: 1rpx solid #ededed;
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1;
 
-    .title-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20rpx;
-
-      .title {
-        font-size: 36rpx;
-        font-weight: bold;
-      }
-
-      .clear-btn {
-        font-size: 26rpx;
-        color: #666;
-      }
-    }
-
-    .search-bar {
-      display: flex;
-      align-items: center;
-      background-color: #f5f5f5;
-      border-radius: 36rpx;
-      padding: 15rpx 30rpx;
-
-      .icon-search {
-        font-size: 28rpx;
-        color: #999;
-        margin-right: 10rpx;
-      }
-
-      input {
-        flex: 1;
-        font-size: 28rpx;
-        color: #333;
-      }
+    .title {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #222;
+      letter-spacing: 1rpx;
     }
   }
 
-  .message-list {
-    .message-item {
+  .session-list {
+    .session-item {
       display: flex;
-      padding: 30rpx;
-      background-color: #ffffff;
-      border-bottom: 1rpx solid #f5f5f5;
+      align-items: center;
+      padding: 28rpx 32rpx;
+      background-color: #fff;
+      border-bottom: 1rpx solid #f0f0f0;
+      transition: background-color 0.2s;
 
-      &.notification {
-        background-color: #fff9f9;
+      &:active {
+        background-color: #f5f5f5;
       }
 
-      .avatar {
-        width: 100rpx;
-        height: 100rpx;
-        border-radius: 50%;
-        margin-right: 20rpx;
+      .avatar-wrapper {
+        position: relative;
+        margin-right: 24rpx;
+
+        .avatar {
+          width: 96rpx;
+          height: 96rpx;
+          border-radius: 50%;
+          background-color: #f0f0f0;
+          border: 1rpx solid #ececec;
+        }
+
+        .unread-badge {
+          position: absolute;
+          top: -8rpx;
+          right: -8rpx;
+          min-width: 32rpx;
+          height: 32rpx;
+          padding: 0 8rpx;
+          border-radius: 32rpx;
+          background-color: #ff3b30;
+          color: #fff;
+          font-size: 20rpx;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          box-shadow: 0 2rpx 8rpx rgba(255, 59, 48, 0.12);
+        }
       }
 
       .content {
         flex: 1;
+        overflow: hidden;
+        min-width: 0;
 
         .top-line {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 10rpx;
+          align-items: center;
+          margin-bottom: 8rpx;
 
-          .name-wrap {
-            display: flex;
-            align-items: center;
-
-            .name {
-              font-size: 30rpx;
-              color: #333;
-              margin-right: 10rpx;
-            }
-
-            .tag {
-              font-size: 22rpx;
-              color: #999;
-              background-color: #f5f5f5;
-              padding: 2rpx 10rpx;
-              border-radius: 4rpx;
-            }
+          .name {
+            font-size: 30rpx;
+            color: #222;
+            font-weight: 500;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           .time {
-            font-size: 24rpx;
-            color: #999;
+            font-size: 22rpx;
+            color: #bbb;
+            margin-left: 16rpx;
+            flex-shrink: 0;
           }
         }
 
         .bottom-line {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-
           .last-message {
-            font-size: 28rpx;
-            color: #666;
-          }
-
-          .unread {
-            background-color: #ff5000;
-            color: #fff;
-            font-size: 24rpx;
-            min-width: 36rpx;
-            height: 36rpx;
-            border-radius: 18rpx;
-            text-align: center;
-            padding: 0 8rpx;
+            font-size: 26rpx;
+            color: #888;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+            max-width: 100%;
           }
         }
-      }
-    }
-  }
-
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100rpx;
-    background-color: #fff;
-    border-top: 1rpx solid #eee;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: #666;
-      font-size: 24rpx;
-
-      &.active {
-        color: #ff5000;
-      }
-
-      .iconfont {
-        font-size: 40rpx;
-        margin-bottom: 4rpx;
       }
     }
   }
