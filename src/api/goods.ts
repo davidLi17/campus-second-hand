@@ -155,7 +155,6 @@ export const getHotGoodsAPI = (params: { id: number; limit: number }) => {
       sellerName: string
       likeCount: number
       categoryName: string
-      // 其他字段...
     }>
   }>({
     method: 'GET',

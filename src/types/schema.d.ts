@@ -1,7 +1,11 @@
+export enum responseCode {
+  SUCCESS = 0,
+  ERROR = 1,
+}
 export namespace Schema {
   // 基础的 Result 泛型接口
   interface Result<T = any> {
-    code: number
+    code: responseCode
     data: T
     message: string
   }
@@ -226,18 +230,55 @@ export namespace Schema {
 
   // 求购商品
   interface PurchaseGoods {
+    /**
+     * 求购商品数量
+     */
     count: number
-    createTime: string
+    /**
+     * 创建时间
+     */
+    createTime?: number
+    /**
+     * 求购商品描述
+     */
     desc: string
-    id: number
+    /**
+     * 求购商品id
+     */
+    id?: number
+    /**
+     * 商品图片地址
+     */
     image: string
+    /**
+     * 求购商品名称
+     */
     name: string
+    /**
+     * 求购商品定价
+     */
     price: number
+    /**
+     * 求购商品类别
+     */
     sort: number
+    /**
+     * 求购商品状态 0:禁用, 1:启用
+     */
     status: number
+    /**
+     * 交易方式 0:线上 1:线下
+     */
     transaction: number
-    updateTime: string
-    userId: number
+    /**
+     * 修改时间
+     */
+    updateTime?: number
+    /**
+     * 发布求购商品的用户id
+     */
+    userId?: number
+    [property: string]: any
   }
 
   // 购物车

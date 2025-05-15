@@ -4,7 +4,15 @@ import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { getGoodsDetailAPI } from '@/api/goods'
 
-import { addToCartAPI } from '@/api/cart'
+import type Api from '@/types/index'
+import {
+  ShoppingCartGetList,
+  ShoppingCartPostAdd,
+  ShoppingCartDeleteDelete,
+  ShoppingCartPutUpdate,
+} from '@/services/services.ts'
+import { responseCode } from '@/types/schema.d'
+import { createSessionAPI } from '@/api/chat'
 
 // 商品详情数据
 const goodsDetail = ref<{
@@ -33,7 +41,7 @@ const quantity = ref(1)
 
 // 页面加载时获取参数
 onLoad((options) => {
-  if (!options.id) {
+  if (options && !options.id) {
     uni.showToast({
       title: '缺少商品ID参数',
       icon: 'none',
@@ -42,7 +50,7 @@ onLoad((options) => {
     return
   }
 
-  fetchGoodsDetail(Number(options.id))
+  if (options) fetchGoodsDetail(Number(options.id))
 })
 
 // 获取商品详情
@@ -83,23 +91,26 @@ const changeQuantity = (type: 'add' | 'minus') => {
 }
 
 // 加入购物车
-const addToCart = () => {
+const addToCart = async () => {
   if (!goodsDetail.value) return
 
-  uni.showToast({
-    title: '已加入购物车',
-    icon: 'success',
+  const res = await ShoppingCartPostAdd({
+    goodId: goodsDetail.value.id,
   })
-
-  // 实际项目中这里调用加入购物车API
-  // addToCartAPI({
-  //   goodsId: goodsDetail.value.id,
-  //   quantity: quantity.value,
-  // })
-
-  setTimeout(() => {
-    uni.navigateTo({ url: '/pages-sub/my/cart' })
-  }, 1500)
+  if (res.code === responseCode.SUCCESS) {
+    uni.showToast({
+      title: '已加入购物车',
+      icon: 'success',
+    })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages-sub/my/cart' })
+    }, 1000)
+  } else {
+    uni.showToast({
+      title: '加入购物车失败',
+      icon: 'none',
+    })
+  }
 }
 
 // 立即购买
@@ -112,10 +123,16 @@ const buyNow = () => {
 }
 
 // 联系卖家
-const contactSeller = () => {
-  uni.showToast({
-    title: '请联系客服获取卖家联系方式',
-    icon: 'none',
+const contactSeller =async  () => {
+  if (!goodsDetail.value?.sellerId){
+    uni.showToast({
+      title: '卖家信息缺失',
+      icon: 'none',
+    })
+    return
+  }
+  const res = await createSessionAPI({
+    toUser: goodsDetail.value.sellerId
   })
 }
 

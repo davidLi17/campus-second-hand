@@ -15,7 +15,7 @@ import type {
 export const createSessionAPI = (params: CreateSessionRequest) => {
   return http<CreateSessionResponse>({
     url: '/chat/createSession',
-    method: 'GET',
+    method: 'POST',
     data: params,
   })
 }

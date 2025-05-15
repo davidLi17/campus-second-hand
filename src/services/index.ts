@@ -46,17 +46,25 @@ uni.addInterceptor('uploadFile', httpInterceptor)
 
 // 通用请求方法
 export const http = <T>(options: UniApp.RequestOptions) => {
+  let isUseJson = false
   // 打印完整请求信息
   console.log('[HTTP Request]', {
     url: baseURL + options.url,
     method: options.method,
-    params: options.params,
+    data: options.data,
     header: options.header,
   })
+  if (options.method === 'POST' || options.method === 'PUT') {
+    isUseJson = true
+  }
   return new Promise<T>((resolve, reject) => {
     uni.request({
       ...options,
       url: baseURL + options.url,
+      header: {
+        'Content-Type': isUseJson ? 'application/json' : 'application/x-www-form-urlencoded',
+        ...options.header,
+      },
       success(res) {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data as T)

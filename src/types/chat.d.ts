@@ -4,7 +4,7 @@ export enum ResponseCode {
   ERROR = 1,
 }
 export interface CreateSessionRequest {
-  toUser: string // 目标用户ID
+  toUser: number // 目标用户ID
 }
 
 export interface CreateSessionResponse {

@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 import { ref, computed } from 'vue'
+import type Api from '@/types/index'
+import {
+  ShoppingCartGetList,
+  ShoppingCartPostAdd,
+  ShoppingCartDeleteDelete,
+  ShoppingCartPutUpdate,
+} from '@/services/services.ts'
 
 // 购物车数据
-const cartList = ref<
-  Array<{
-    id: number
-    goodId: number
-    name: string
-    desc: string
-    price: number
-    imgUrl: string
-    count: number
-    selected: boolean
-    createTime: string
-    userId: number
-  }>
->([])
+const cartList = ref<Api.Paths.AShoppingGetList.Response['data']>([])
 
 // 全选状态
 const allSelected = ref(false)
@@ -24,58 +18,17 @@ const allSelected = ref(false)
 // 获取购物车列表
 const fetchCartList = async () => {
   try {
-    // 这里应该是调用API获取购物车数据
-    // const res = await getCartListAPI()
-    // cartList.value = res.data
-
-    // 模拟数据
-    cartList.value = [
-      {
-        id: 1,
-        goodId: 101,
-        name: 'iPhone 13 Pro',
-        desc: '99新 256G 国行',
-        price: 4999,
-        imgUrl: 'https://imgservice.suning.cn/uimg1/b2c/image/iphone13-pro.jpg',
-        count: 1,
-        selected: true,
-        createTime: '2023-05-15T10:30:00',
-        userId: 1001,
-      },
-      {
-        id: 2,
-        goodId: 102,
-        name: 'MacBook Pro 14寸',
-        desc: 'M1 Pro 16G 512G',
-        price: 12999,
-        imgUrl: 'https://imgservice.suning.cn/uimg1/b2c/image/macbook-pro.jpg',
-        count: 1,
-        selected: false,
-        createTime: '2023-06-20T14:15:00',
-        userId: 1001,
-      },
-      {
-        id: 3,
-        goodId: 103,
-        name: 'AirPods Pro 2',
-        desc: '全新未拆封',
-        price: 1499,
-        imgUrl: 'https://imgservice.suning.cn/uimg1/b2c/image/airpods-pro.jpg',
-        count: 2,
-        selected: true,
-        createTime: '2023-07-10T09:45:00',
-        userId: 1001,
-      },
-    ]
-
-    // 更新全选状态
-    updateAllSelected()
+    const res = await ShoppingCartGetList()
+    if (!res || !res.data) throw new Error('获取购物车数据失败')
+    cartList.value = res.data
   } catch (error) {
     uni.showToast({
       title: '获取购物车失败',
       icon: 'none',
     })
+    cartList.value = []
   }
+  updateAllSelected()
 }
 
 // 页面加载
@@ -89,29 +42,61 @@ const updateAllSelected = () => {
 }
 
 // 切换商品选中状态
-const toggleSelect = (index: number) => {
+const toggleSelect = async (index: number) => {
   cartList.value[index].selected = !cartList.value[index].selected
   updateAllSelected()
+  // 更新后端选中状态
+  try {
+    const res = await ShoppingCartPutUpdate(cartList.value)
+    if (res.code !== 0) {
+      throw new Error('更新选中状态失败')
+    }
+  } catch (e) {
+    uni.showToast({
+      title: '更新选中状态失败',
+      icon: 'none',
+    })
+    cartList.value[index].selected = !cartList.value[index].selected // 回滚选中状态
+  }
 }
 
 // 切换全选状态
-const toggleAllSelect = () => {
+const toggleAllSelect = async () => {
   allSelected.value = !allSelected.value
   cartList.value.forEach((item) => {
     item.selected = allSelected.value
   })
+  // 批量更新后端选中状态
+  try {
+    await Promise.all(
+      cartList.value.map((item) =>
+        ShoppingCartPutUpdate({
+          id: item.id,
+          selected: item.selected,
+        } as any),
+      ),
+    )
+  } catch (e) {
+    // 忽略错误
+  }
 }
 
 // 修改商品数量
-const changeCount = (index: number, type: 'add' | 'minus') => {
+const changeCount = async (index: number, type: 'add' | 'minus') => {
   if (type === 'add') {
     cartList.value[index].count++
   } else if (type === 'minus' && cartList.value[index].count > 1) {
     cartList.value[index].count--
   }
-
-  // 这里应该调用API更新购物车数量
-  // updateCartItemAPI(cartList.value[index].id, cartList.value[index].count)
+  // 更新后端数量
+  try {
+    await ShoppingCartPutUpdate({
+      id: cartList.value[index].id,
+      count: cartList.value[index].count,
+    } as any)
+  } catch (e) {
+    // 忽略错误
+  }
 }
 
 // 删除商品
@@ -119,14 +104,15 @@ const deleteItem = (index: number) => {
   uni.showModal({
     title: '提示',
     content: '确定要删除该商品吗？',
-    success: (res) => {
+    success: async (res) => {
       if (res.confirm) {
-        // 这里应该调用API删除购物车商品
-        // deleteCartItemAPI(cartList.value[index].id)
-
+        try {
+          await ShoppingCartDeleteDelete({ id: cartList.value[index].id } as any)
+        } catch (e) {
+          // 忽略错误
+        }
         cartList.value.splice(index, 1)
         updateAllSelected()
-
         uni.showToast({
           title: '删除成功',
           icon: 'success',
@@ -153,7 +139,6 @@ const checkout = () => {
     })
     return
   }
-
   // 跳转到订单确认页面
   uni.navigateTo({
     url: '/pages/order/confirm',

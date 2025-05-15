@@ -539,7 +539,7 @@ export namespace Paths {
     interface Request {}
 
     /** 响应 */
-    interface Response {}
+    type Response = Api.Schema.PurchaseGoods[]
   }
 
   /**
@@ -1060,7 +1060,7 @@ export namespace Paths {
    ** 请求方式: post
    ** 接口描述:
    */
-  namespace APostAdd {
+  namespace AShoppingPostAdd {
     /** 请求 */
     interface Request extends Api.Schema.ShoppingCartDTO {}
 
@@ -1074,7 +1074,7 @@ export namespace Paths {
    ** 请求方式: delete
    ** 接口描述:
    */
-  namespace ADeleteDelete {
+  namespace AShoppingDelete {
     /** 请求 */
     interface Request extends Api.Schema.ShoppingCartDTO {}
 
@@ -1088,7 +1088,7 @@ export namespace Paths {
    ** 请求方式: get
    ** 接口描述:
    */
-  namespace AGetList {
+  namespace AShoppingGetList {
     /** 请求 */
     interface Request {}
 
@@ -1100,11 +1100,11 @@ export namespace Paths {
    ** 接口名称: 修改购物车
    ** 接口地址: /user/shoppingCart/update
    ** 请求方式: put
-   ** 接口描述:
+   ** 接口描述: 修改购物车
    */
-  namespace APutUpdate {
+  namespace AShoppingPutUpdate {
     /** 请求 */
-    interface Request {}
+    type Request = Api.Schema.ShoppingCart[]
 
     /** 响应 */
     interface Response extends Api.Schema.Result {}

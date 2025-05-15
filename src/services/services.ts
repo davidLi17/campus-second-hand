@@ -640,8 +640,8 @@ export function getOrderById(params: Api.Paths.AGetOrder_Id.Request) {
  */
 
 /** 添加购物车 - POST /user/shoppingCart/add */
-export function ShoppingCartPostAdd(params: Api.Paths.APostAdd.Request) {
-  return request<Promise<Api.Paths.APostAdd.Response>>({
+export function ShoppingCartPostAdd(params: Api.Paths.AShoppingPostAdd.Request) {
+  return request<Promise<Api.Paths.AShoppingPostAdd.Response>>({
     url: `/user/shoppingCart/add`,
     method: 'POST',
     data: params,
@@ -649,8 +649,8 @@ export function ShoppingCartPostAdd(params: Api.Paths.APostAdd.Request) {
 }
 
 /** 删除购物车 - DELETE /user/shoppingCart/delete */
-export function ShoppingCartDeleteDelete(params: Api.Paths.ADeleteDelete.Request) {
-  return request<Promise<Api.Paths.ADeleteDelete.Response>>({
+export function ShoppingCartDeleteDelete(params: Api.Paths.AShoppingDelete.Request) {
+  return request<Promise<Api.Paths.AShoppingDelete.Response>>({
     url: `/user/shoppingCart/delete`,
     method: 'DELETE',
     data: params,
@@ -658,8 +658,8 @@ export function ShoppingCartDeleteDelete(params: Api.Paths.ADeleteDelete.Request
 }
 
 /** 查询购物车 - GET /user/shoppingCart/list */
-export function ShoppingCartGetList(params?: Api.Paths.AGetList.Request) {
-  return request<Promise<Api.Paths.AGetList.Response>>({
+export function ShoppingCartGetList(params?: Api.Paths.AShoppingGetList.Request) {
+  return request<Promise<Api.Paths.AShoppingGetList.Response>>({
     url: `/user/shoppingCart/list`,
     method: 'GET',
     data: params,
@@ -667,8 +667,8 @@ export function ShoppingCartGetList(params?: Api.Paths.AGetList.Request) {
 }
 
 /** 修改购物_cart - PUT /user/shoppingCart/update */
-export function ShoppingCartPutUpdate(params: Api.Paths.APutUpdate.Request) {
-  return request<Promise<Api.Paths.APutUpdate.Response>>({
+export function ShoppingCartPutUpdate(params: Api.Paths.AShoppingPutUpdate.Request) {
+  return request<Promise<Api.Paths.AShoppingPutUpdate.Response>>({
     url: `/user/shoppingCart/update`,
     method: 'PUT',
     data: params,
