@@ -5,12 +5,7 @@ import { ref } from 'vue'
 import { getGoodsDetailAPI } from '@/api/goods'
 
 import type Api from '@/types/index'
-import {
-  ShoppingCartGetList,
-  ShoppingCartPostAdd,
-  ShoppingCartDeleteDelete,
-  ShoppingCartPutUpdate,
-} from '@/services/services.ts'
+import { ShoppingCartPostAdd } from '@/services/services.ts'
 import { responseCode } from '@/types/schema.d'
 import { createSessionAPI } from '@/api/chat'
 
@@ -123,8 +118,8 @@ const buyNow = () => {
 }
 
 // 联系卖家
-const contactSeller =async  () => {
-  if (!goodsDetail.value?.sellerId){
+const contactSeller = async () => {
+  if (!goodsDetail.value?.sellerId) {
     uni.showToast({
       title: '卖家信息缺失',
       icon: 'none',
@@ -132,7 +127,7 @@ const contactSeller =async  () => {
     return
   }
   const res = await createSessionAPI({
-    toUser: goodsDetail.value.sellerId
+    toUser: goodsDetail.value.sellerId,
   })
 }
 
