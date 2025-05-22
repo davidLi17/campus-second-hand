@@ -1,18 +1,29 @@
-<!-- src/pages/goods/detail.vue -->
-<script setup lang="ts">
+// 1. 框架相关
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+
+// 2. API 相关
 import { getGoodsDetailAPI } from '@/api/goods'
+import { createSessionAPI } from '@/api/chat'
+
+// 3. 状态管理
 import { useMemberStore } from '@/stores/member'
+
+// 4. 服务方法
 import {
   ShoppingCartGetList,
   ShoppingCartPostAdd,
   ShoppingCartDeleteDelete,
   ShoppingCartPutUpdate,
 } from '@/services/services.ts'
+
+// 5. 类型定义
+import type Api from '@/types/index'
 import { responseCode } from '@/types/schema.d'
-import { createSessionAPI } from '@/api/chat'
+
+// 6. 组件
 import MessageBoard from './MessageBoard.vue'
+
 
 // 商品详情数据
 const goodsDetail = ref<{

@@ -86,6 +86,7 @@
         "navigationBarTitleText": "创建订单"
       }
     },
+    // 保留 feature_0518_LYS 分支的订单相关页面
     {
       "path": "pages/order/confirm",
       "style": {
@@ -122,6 +123,7 @@
         "navigationBarTitleText": "求购页面"
       }
     },
+    // 继续保留 feature_0518_LYS 的订单功能
     {
       "path": "pages/order/detail",
       "style": {
