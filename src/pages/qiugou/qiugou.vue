@@ -1,8 +1,41 @@
 <template>
-  <div class="qiugou">求购商品列表</div>
+  <div class="qiugou-container">
+    <!-- 商品列表 -->
+    <view class="goods-list" v-if="goodsList.length > 0">
+      <view v-for="item in goodsList" :key="item.id" class="goods-item">
+        <image class="goods-image" :src="item.image" mode="aspectFill"></image>
+        <view class="goods-info">
+          <view class="goods-desc">{{ item.desc }}</view>
+          <view class="goods-price">¥{{ item.price }}</view>
+          <view class="user-info">
+            <image class="user-avatar" :src="defaultAvatar"></image>
+            <text class="user-name">{{ item.name }}</text>
+            <view class="like-count">
+              <text class="iconfont icon-like"></text>
+              <text>{{ Math.floor(item.transaction / 10) }}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="empty-info" v-else>
+      <image
+        class="empty-img"
+        src="https://cdn.jsdelivr.net/gh/xiangyuecn/areaicon/empty-box.svg"
+        mode="widthFix"
+      ></image>
+      <text class="empty-text">暂无求购信息</text>
+    </view>
+
+    <!-- 新建求购按钮 -->
+    <view class="add-request-btn" @click="navigateToRequest">
+      <text>发布求购</text>
+    </view>
+  </div>
 </template>
 
 <script lang="ts" setup>
+// feature_0518_LYS
 // import type Api from '@/types/index.d.ts'
 // import { PurchaseGoodsGetAll } from '@/services/services.ts'
 // import { responseCode } from '@/types/schema.ts'
@@ -97,6 +130,144 @@
 // onLoad(() => {
 //   // fetchGoodsList()
 // })
+
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.qiugou-container {
+  padding: 10px;
+  background-color: #f7f7f7;
+  min-height: 100vh;
+}
+
+.goods-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-bottom: 80px; /* 为底部按钮留出空间 */
+}
+
+.goods-item {
+  width: 48%;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.goods-image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.goods-info {
+  padding: 8px 10px;
+}
+
+.goods-desc {
+  font-size: 14px;
+  line-height: 1.3;
+  max-height: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: #333;
+}
+
+.goods-price {
+  font-size: 18px;
+  font-weight: bold;
+  color: #f04142;
+  margin: 5px 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+}
+
+.user-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.user-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.like-count {
+  display: flex;
+  align-items: center;
+}
+
+.icon-like {
+  margin-right: 3px;
+}
+
+.add-request-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff6e30;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 110, 48, 0.5);
+  z-index: 100;
+  font-size: 16px;
+}
+
+.icon-add {
+  margin-right: 5px;
+}
+
+/* 补充一些字体图标样式，实际项目中需要引入相应的字体文件 */
+.iconfont {
+  font-family: 'iconfont';
+}
+.icon-add:before {
+  content: '\e6df';
+}
+.icon-like:before {
+  content: '\e8c3';
+}
+
+.empty-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #bbb;
+  font-size: 16px;
+  padding-top: 60px;
+}
+.empty-img {
+  width: 120px;
+  height: 120px;
+  margin-bottom: 18px;
+  opacity: 0.7;
+}
+.empty-text {
+  font-size: 16px;
+  color: #bbb;
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+</style>
