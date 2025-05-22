@@ -36,7 +36,11 @@ onLoad((query) => {
     uni.navigateBack()
     return
   }
-
+  if (query.name) {
+    uni.setNavigationBarTitle({
+      title: decodeURIComponent(query.name),
+    })
+  }
   fetchCategoryDetail(Number(query.id))
 })
 
@@ -75,7 +79,9 @@ const handleGoodsClick = (goodsId: number) => {
 // 点击子分类
 const handleSubCategoryClick = (subCategoryId: number, subCategoryName: string) => {
   uni.navigateTo({
-    url: `/pages/category/detail?id=${subCategoryId}&name=${encodeURIComponent(subCategoryName)}`,
+    url: `/pages/category/subCategoryDetail?id=${subCategoryId}&name=${encodeURIComponent(
+      subCategoryName,
+    )}`,
   })
 }
 

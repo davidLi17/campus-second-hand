@@ -1,124 +1,83 @@
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { addressApi, type AddressBook } from '@/api/address'
+import { useMemberStore } from '@/stores/member'
+import { onShow } from '@dcloudio/uni-app'
+
+const memberStore = useMemberStore()
 
 // 地址列表数据
-const addressList = ref<
-  Array<{
-    id: number
-    userId: number
-    consignee: string
-    phone: string
-    provinceName: string
-    cityName: string
-    districtName: string
-    detail: string
-    isDefault: number
-    label: string
-  }>
->([])
+const addressList = ref<AddressBook[]>([])
+const loading = ref(false)
 
-// 获取地址列表
-const fetchAddressList = async () => {
+// 添加 onShow 生命周期钩子
+onMounted(() => {
+  loadAddressList()
+})
+
+// 添加 onShow 钩子，每次页面显示时刷新数据
+onShow(() => {
+  loadAddressList()
+})
+
+// 加载地址列表
+const loadAddressList = async () => {
   try {
-    // 这里应该是调用API获取地址数据
-    // const res = await getAddressListAPI()
-    // addressList.value = res.data
-
-    // 模拟数据
-    addressList.value = [
-      {
-        id: 1,
-        userId: 1001,
-        consignee: '张三',
-        phone: '13800138000',
-        provinceName: '北京市',
-        cityName: '北京市',
-        districtName: '朝阳区',
-        detail: '建国路88号SOHO现代城A座',
-        isDefault: 1,
-        label: '公司',
-      },
-      {
-        id: 2,
-        userId: 1001,
-        consignee: '张三',
-        phone: '13800138001',
-        provinceName: '上海市',
-        cityName: '上海市',
-        districtName: '浦东新区',
-        detail: '陆家嘴环路1000号',
-        isDefault: 0,
-        label: '家',
-      },
-      {
-        id: 3,
-        userId: 1001,
-        consignee: '李四',
-        phone: '13800138002',
-        provinceName: '广东省',
-        cityName: '深圳市',
-        districtName: '南山区',
-        detail: '科技园南区1001号',
-        isDefault: 0,
-        label: '学校',
-      },
-    ]
+    loading.value = true
+    const res = await addressApi.getAllAddresses()
+    addressList.value = res.data
   } catch (error) {
-    uni.showToast({
-      title: '获取地址失败',
-      icon: 'none',
-    })
+    console.error('加载地址失败:', error)
+    uni.showToast({ title: '加载地址失败', icon: 'none' })
+  } finally {
+    loading.value = false
   }
 }
 
-// 页面加载
-onLoad(() => {
-  fetchAddressList()
-})
-
 // 设置默认地址
-const setDefaultAddress = (id: number) => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要设为默认地址吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // 这里应该调用API设置默认地址
-        // setDefaultAddressAPI(id)
+const setDefaultAddress = async (id: number) => {
+  try {
+    await uni.showModal({
+      title: '提示',
+      content: '确定要设为默认地址吗？',
+      confirmText: '设为默认',
+      confirmColor: '#27ba9b',
+    })
 
-        addressList.value.forEach((item) => {
-          item.isDefault = item.id === id ? 1 : 0
-        })
+    // 找到要设置的地址
+    const address = addressList.value.find((item) => item.id === id)
+    if (!address) return
 
-        uni.showToast({
-          title: '设置成功',
-          icon: 'success',
-        })
-      }
-    },
-  })
+    // 调用API更新
+    await addressApi.updateAddress({
+      ...address,
+      isDefault: 1,
+    })
+
+    // 重新加载列表
+    await loadAddressList()
+    uni.showToast({ title: '设置成功', icon: 'success' })
+  } catch (error) {
+    console.error('设置默认地址失败:', error)
+  }
 }
 
 // 删除地址
-const deleteAddress = (id: number) => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要删除该地址吗？',
-    success: (res) => {
-      if (res.confirm) {
-        // 这里应该调用API删除地址
-        // deleteAddressAPI(id)
+const deleteAddress = async (id: number) => {
+  try {
+    await uni.showModal({
+      title: '提示',
+      content: '确定要删除该地址吗？',
+      confirmText: '删除',
+      confirmColor: '#e64340',
+    })
 
-        addressList.value = addressList.value.filter((item) => item.id !== id)
-
-        uni.showToast({
-          title: '删除成功',
-          icon: 'success',
-        })
-      }
-    },
-  })
+    await addressApi.deleteAddress(id)
+    await loadAddressList()
+    uni.showToast({ title: '删除成功', icon: 'success' })
+  } catch (error) {
+    console.error('删除地址失败:', error)
+  }
 }
 
 // 编辑地址
@@ -131,24 +90,25 @@ const editAddress = (id: number) => {
 // 新增地址
 const addAddress = () => {
   uni.navigateTo({
-    url: '/pages/address/edit',
+    url: '/pages-sub/my/address_edit',
   })
 }
 
-// 返回上一页
-const goBack = () => {
-  uni.navigateBack()
-}
+// 初始化加载
+onMounted(() => {
+  loadAddressList()
+})
 </script>
 
 <template>
   <view class="address-page">
     <!-- 地址列表 -->
     <scroll-view scroll-y class="address-list">
+      <!-- 地址项 -->
       <view
-        class="address-item"
         v-for="item in addressList"
         :key="item.id"
+        class="address-item"
         :class="{ default: item.isDefault === 1 }"
       >
         <!-- 地址标签 -->
@@ -171,23 +131,26 @@ const goBack = () => {
 
         <!-- 操作按钮 -->
         <view class="address-actions">
-          <view class="action-btn" @click="editAddress(item.id)">
+          <view class="action-btn" @click="editAddress(item.id!)">
             <uni-icons type="compose" size="20" color="#666" />
             <text>编辑</text>
           </view>
-          <view class="action-btn" @click="deleteAddress(item.id)">
+          <view class="action-btn" @click="deleteAddress(item.id!)">
             <uni-icons type="trash" size="20" color="#666" />
             <text>删除</text>
           </view>
-          <view class="action-btn" @click="setDefaultAddress(item.id)" v-if="item.isDefault === 0">
+          <view class="action-btn" @click="setDefaultAddress(item.id!)" v-if="item.isDefault !== 1">
             <uni-icons type="checkmarkempty" size="20" color="#666" />
             <text>设为默认</text>
           </view>
         </view>
       </view>
 
+      <!-- 加载状态 -->
+      <uni-load-more :status="loading ? 'loading' : 'noMore'" v-if="addressList.length > 0" />
+
       <!-- 空状态 -->
-      <view class="empty" v-if="addressList.length === 0">
+      <view class="empty" v-if="!loading && addressList.length === 0">
         <image class="empty-image" src="/static/images/empty-address.png" />
         <text class="empty-text">暂无收货地址</text>
       </view>

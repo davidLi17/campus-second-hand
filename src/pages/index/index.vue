@@ -36,14 +36,6 @@ const onLoadMore = () => {
     <!-- 分类导航 -->
     <XtxCategories />
 
-    <!-- 商品列表 -->
-    <!-- <XtxGoodsList
-      @refresh="onRefresh"
-      @load-more="onLoadMore"
-      :refreshing="isRefreshing"
-      :loading="isLoading"
-    /> -->
-
     <HotGoodsList />
   </view>
 </template>
