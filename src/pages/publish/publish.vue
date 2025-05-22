@@ -1,93 +1,139 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { useMemberStore } from '@/stores/member'
-import { publishGoodsAPI } from '@/api/goods'
+import { goodsApi } from '@/api/user_goods'
 import { uploadFileAPI } from '@/api/upload'
+import { categoryApi } from '@/api/category1'
 
 const memberStore = useMemberStore()
 
+// 路由参数
+const routeParams = ref<{ id?: string }>({})
+
 // 表单数据
 const formData = ref({
-  categoryId: 0,
+  id: undefined as number | undefined,
   name: '',
+  categoryId: undefined as number | undefined,
+  price: '',
   desc: '',
   picture: '',
   pictures: [] as string[],
-  price: 0,
-  status: 0, // 0-在售
+  status: 1, // 默认上架状态
 })
 
-// 分类选项
-const categories = ref([
-  { id: 1, name: '教材书籍' },
-  { id: 2, name: '数码电子' },
-  { id: 3, name: '生活用品' },
-  { id: 4, name: '服饰鞋包' },
-  { id: 5, name: '运动器材' },
-  { id: 6, name: '其他' },
-])
+// 是否是编辑模式
+const isEditMode = computed(() => !!routeParams.value.id)
 
-// 上传状态
-const isUploading = ref(false)
+// 页面标题
+const pageTitle = computed(() => (isEditMode.value ? '编辑商品' : '发布闲置'))
 
-// 上传图片
-// 完善的上传组件逻辑
-const uploadImage = async () => {
+// 分类数据
+const categories = ref<{ id: number; name: string }[]>([])
+
+// 加载分类数据
+const loadCategories = async () => {
   try {
-    // 1. 选择文件
-    const res = await uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'], // 开启压缩
-      sourceType: ['album'],
-    })
-
-    // 2. 检查文件大小
-    const filePath = res.tempFilePaths[0]
-    const fileInfo = await getFileSize(filePath)
-
-    if (fileInfo.size > 10 * 1024 * 1024) {
-      return uni.showToast({
-        title: '图片大小不能超过10MB',
-        icon: 'none',
-      })
-    }
-
-    // 3. 压缩图片（可选）
-    const compressedPath = await compressImage(filePath)
-
-    // 4. 上传
-    const { url } = await uploadFileAPI(compressedPath)
+    const res = await categoryApi.getAll()
+    categories.value = res.data
   } catch (error) {
-    handleUploadError(error)
+    console.error('加载分类失败:', error)
+    uni.showToast({ title: '加载分类失败', icon: 'none' })
   }
 }
 
-// 获取文件大小
-const getFileSize = (path: string) => {
-  return new Promise<{ size: number }>((resolve) => {
-    uni.getFileInfo({
-      filePath: path,
-      success: (res) => resolve(res),
-      fail: () => resolve({ size: 0 }),
-    })
-  })
+// 加载商品详情
+const loadGoodDetail = async (id: number) => {
+  try {
+    const res = await goodsApi.getById(id)
+    const good = res.data
+    formData.value = {
+      id: good.id,
+      name: good.name,
+      categoryId: good.categoryId,
+      price: good.price.toString(),
+      desc: good.desc,
+      picture: good.picture,
+      pictures: good.pictures || [],
+      status: good.status,
+    }
+  } catch (error) {
+    console.error('加载商品详情失败:', error)
+    uni.showToast({ title: '加载商品失败', icon: 'none' })
+  }
 }
 
-// 图片压缩
-const compressImage = (src: string, quality = 0.7) => {
-  return new Promise<string>((resolve) => {
-    uni.compressImage({
-      src,
-      quality: quality * 100,
-      success: (res) => resolve(res.tempFilePath),
-      fail: () => resolve(src), // 压缩失败返回原图
+// 上传状态
+const uploadProgress = ref(0)
+const isUploading = ref(false)
+
+// 上传图片
+const handleUpload = async () => {
+  if (isUploading.value) return
+
+  try {
+    isUploading.value = true
+    uploadProgress.value = 0
+
+    const chooseRes = await uni.chooseImage({
+      count: 9 - formData.value.pictures.length,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
     })
-  })
+
+    if (!chooseRes.tempFilePaths || chooseRes.tempFilePaths.length === 0) {
+      throw new Error('未选择图片')
+    }
+
+    for (const filePath of chooseRes.tempFilePaths) {
+      const fileInfo = await new Promise<UniApp.GetFileInfoSuccess>((resolve) => {
+        uni.getFileInfo({
+          filePath,
+          success: resolve,
+          fail: () => resolve({ size: Infinity } as any),
+        })
+      })
+
+      if (fileInfo.size > 10 * 1024 * 1024) {
+        throw new Error('图片大小不能超过10MB')
+      }
+
+      const compressedPath = await new Promise<string>((resolve) => {
+        uni.compressImage({
+          src: filePath,
+          quality: 70,
+          success: (res) => resolve(res.tempFilePath),
+          fail: () => resolve(filePath),
+        })
+      })
+
+      const uploadRes = await uploadFileAPI(compressedPath, (progress) => {
+        uploadProgress.value = progress
+      })
+
+      formData.value.pictures.push(uploadRes.data)
+
+      if (!formData.value.picture) {
+        formData.value.picture = uploadRes.data
+      }
+    }
+
+    uni.showToast({ title: '上传成功', icon: 'success' })
+  } catch (error: any) {
+    console.error('上传失败:', error)
+    uni.showToast({
+      title: error.message || '上传失败',
+      icon: 'none',
+    })
+  } finally {
+    isUploading.value = false
+    uploadProgress.value = 0
+  }
 }
 
-// 移除图片
+// 删除图片
 const removeImage = (index: number) => {
-  // 如果移除的是主图，需要重新设置主图
   if (formData.value.picture === formData.value.pictures[index]) {
     formData.value.picture = formData.value.pictures[0] || ''
   }
@@ -105,22 +151,18 @@ const validateForm = () => {
     uni.showToast({ title: '请输入商品名称', icon: 'none' })
     return false
   }
-
   if (!formData.value.categoryId) {
     uni.showToast({ title: '请选择商品分类', icon: 'none' })
     return false
   }
-
-  if (!formData.value.price || formData.value.price <= 0) {
-    uni.showToast({ title: '请输入合理的价格', icon: 'none' })
+  if (!formData.value.price || isNaN(Number(formData.value.price))) {
+    uni.showToast({ title: '请输入有效的价格', icon: 'none' })
     return false
   }
-
-  if (!formData.value.picture) {
+  if (formData.value.pictures.length === 0) {
     uni.showToast({ title: '请至少上传一张图片', icon: 'none' })
     return false
   }
-
   return true
 }
 
@@ -128,105 +170,139 @@ const validateForm = () => {
 const submitForm = async () => {
   if (!validateForm()) return
 
+  const submitData = {
+    ...formData.value,
+    price: Number(formData.value.price),
+    sellerId: memberStore.profile?.id,
+  }
+
+  uni.showLoading({ title: '提交中...' })
   try {
-    uni.showLoading({ title: '发布中...' })
-
-    // 从memberStore获取卖家ID
-    const sellerId = memberStore.profile?.id
-    if (!sellerId) {
-      throw new Error('请先登录')
+    if (isEditMode.value) {
+      await goodsApi.updateGood(submitData)
+      uni.showToast({ title: '修改成功', icon: 'success' })
+    } else {
+      await goodsApi.addGood(submitData)
+      uni.showToast({ title: '发布成功', icon: 'success' })
     }
-
-    const res = await publishGoodsAPI({
-      ...formData.value,
-      sellerId,
-    })
-
-    uni.hideLoading()
-    uni.showToast({ title: '发布成功', icon: 'success' })
-
-    // 发布成功后返回首页
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/index/index' })
+      uni.navigateBack()
     }, 1500)
-  } catch (error: any) {
+  } catch (error) {
+    console.error('提交失败:', error)
+    uni.showToast({
+      title: isEditMode.value ? '修改失败' : '发布失败',
+      icon: 'error',
+    })
+  } finally {
     uni.hideLoading()
-    uni.showToast({ title: error.message || '发布失败', icon: 'none' })
   }
 }
+
+// 初始化
+onLoad((params) => {
+  routeParams.value = params
+  if (params.id) {
+    loadGoodDetail(Number(params.id))
+  }
+  loadCategories()
+})
 </script>
 
 <template>
   <view class="publish-page">
-    <!-- 表单区域 -->
-    <scroll-view class="form-container" scroll-y>
-      <!-- 商品图片上传 -->
-      <view class="form-section">
-        <text class="section-title">商品图片</text>
-        <text class="section-tip">(第一张将作为主图)</text>
+    <!-- 顶部导航 -->
+    <view class="page-header">
+      <text class="header-title">{{ pageTitle }}</text>
+    </view>
 
-        <view class="image-uploader">
-          <!-- 已上传图片 -->
+    <!-- 表单内容 -->
+    <scroll-view class="form-content" scroll-y>
+      <!-- 图片上传区域 -->
+      <view class="upload-area">
+        <text class="section-title">商品图片</text>
+        <text class="section-subtitle">(最多9张，第一张为主图)</text>
+
+        <view class="image-grid">
           <view
-            class="image-item"
-            v-for="(url, index) in formData.pictures"
+            v-for="(img, index) in formData.pictures"
             :key="index"
-            :class="{ 'main-image': url === formData.picture }"
+            class="image-box"
+            :class="{ 'main-image': img === formData.picture }"
           >
-            <image class="image" :src="url" mode="aspectFill" @click="setMainImage(url)" />
-            <view class="image-remove" @click.stop="removeImage(index)">
-              <uni-icons type="closeempty" size="18" color="#fff" />
+            <image class="preview-image" :src="img" mode="aspectFill" @click="setMainImage(img)" />
+            <view class="image-overlay" @click.stop="removeImage(index)">
+              <uni-icons type="close" size="18" color="#fff" />
             </view>
-            <view v-if="url === formData.picture" class="main-tag">主图</view>
+            <view v-if="img === formData.picture" class="main-label">主图</view>
           </view>
 
-          <!-- 上传按钮 -->
-          <view class="upload-btn" @click="uploadImage" v-if="formData.pictures.length < 9">
-            <uni-icons type="plusempty" size="40" color="#ccc" />
+          <view class="upload-box" @click="handleUpload" v-if="formData.pictures.length < 9">
+            <view class="upload-icon">
+              <uni-icons type="plusempty" size="28" color="#888" />
+            </view>
             <text class="upload-text">添加图片</text>
           </view>
         </view>
 
-        <view class="uploading-text" v-if="isUploading">图片上传中...</view>
+        <view class="upload-progress" v-if="isUploading">
+          <progress
+            :percent="uploadProgress"
+            activeColor="#4a8cff"
+            backgroundColor="#f0f4ff"
+            stroke-width="4"
+          />
+          <text class="progress-text">上传中 {{ uploadProgress }}%</text>
+        </view>
       </view>
 
-      <!-- 商品基本信息 -->
+      <!-- 商品信息表单 -->
       <view class="form-section">
-        <text class="section-title">基本信息</text>
+        <text class="section-title">商品信息</text>
 
-        <view class="form-item">
-          <text class="label">商品名称</text>
+        <view class="form-row">
+          <text class="form-label">商品名称</text>
           <input
-            class="input"
+            class="form-input"
             v-model="formData.name"
             placeholder="请输入商品名称"
+            placeholder-class="placeholder"
             maxlength="30"
           />
+          <text class="word-count">{{ formData.name.length }}/30</text>
         </view>
 
-        <view class="form-item">
-          <text class="label">商品分类</text>
+        <view class="form-row">
+          <text class="form-label">商品分类</text>
           <picker
-            class="picker"
+            class="form-picker"
             mode="selector"
             :range="categories"
             range-key="name"
             @change="(e) => (formData.categoryId = categories[e.detail.value].id)"
           >
-            <view class="picker-view">
-              <text v-if="formData.categoryId">
+            <view class="picker-content">
+              <text v-if="formData.categoryId" class="selected-value">
                 {{ categories.find((c) => c.id === formData.categoryId)?.name }}
               </text>
-              <text v-else class="placeholder">请选择商品分类</text>
+              <text v-else class="placeholder">请选择分类</text>
               <uni-icons type="arrowright" size="16" color="#999" />
             </view>
           </picker>
         </view>
 
-        <view class="form-item">
-          <text class="label">商品价格</text>
-          <input class="input" v-model="formData.price" type="number" placeholder="请输入价格" />
-          <text class="unit">元</text>
+        <view class="form-row">
+          <text class="form-label">出售价格</text>
+          <view class="price-input">
+            <text class="currency-symbol">¥</text>
+            <input
+              class="form-input"
+              v-model="formData.price"
+              type="digit"
+              placeholder="0.00"
+              placeholder-class="placeholder"
+            />
+          </view>
         </view>
       </view>
 
@@ -234,177 +310,209 @@ const submitForm = async () => {
       <view class="form-section">
         <text class="section-title">商品描述</text>
         <textarea
-          class="textarea"
+          class="description-box"
           v-model="formData.desc"
-          placeholder="请输入商品详细描述（新旧程度、使用情况等）"
+          placeholder="详细描述商品的新旧程度、使用情况等"
+          placeholder-class="placeholder"
           maxlength="500"
         />
-        <text class="word-count">{{ formData.desc.length }}/500</text>
+        <view class="description-footer">
+          <text class="word-count">{{ formData.desc.length }}/500</text>
+          <text class="description-tip">详细的描述有助于更快售出</text>
+        </view>
       </view>
     </scroll-view>
 
     <!-- 底部操作栏 -->
     <view class="action-bar">
-      <button class="submit-btn" @click="submitForm" :disabled="isUploading">发布商品</button>
+      <button
+        class="submit-button"
+        @click="submitForm"
+        :disabled="isUploading || !formData.pictures.length"
+      >
+        <text>{{ isEditMode ? '保存修改' : '发布商品' }}</text>
+      </button>
     </view>
   </view>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .publish-page {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f7f7f7;
+  background-color: #f8fafc;
+}
 
-  .form-container {
-    flex: 1;
-    padding: 20rpx 30rpx;
+.page-header {
+  padding: 30rpx 40rpx;
+  background-color: #fff;
+  border-bottom: 1rpx solid #f0f4ff;
+
+  .header-title {
+    font-size: 36rpx;
+    font-weight: 500;
+    color: #333;
+  }
+}
+
+.form-content {
+  flex: 1;
+  padding: 30rpx;
+}
+
+.upload-area {
+  margin-bottom: 40rpx;
+  padding: 30rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(74, 140, 255, 0.06);
+
+  .section-title {
+    font-size: 30rpx;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 8rpx;
   }
 
-  .form-section {
+  .section-subtitle {
+    font-size: 24rpx;
+    color: #888;
     margin-bottom: 30rpx;
-    padding: 30rpx;
-    background-color: #fff;
-    border-radius: 16rpx;
-
-    .section-title {
-      font-size: 32rpx;
-      font-weight: bold;
-      color: #333;
-    }
-
-    .section-tip {
-      font-size: 24rpx;
-      color: #999;
-      margin-left: 10rpx;
-    }
   }
+}
 
-  /* 图片上传样式 */
-  .image-uploader {
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: 20rpx;
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
 
-    .image-item {
-      position: relative;
-      width: 210rpx;
-      height: 210rpx;
-      margin-right: 20rpx;
-      margin-bottom: 20rpx;
-      border-radius: 8rpx;
-      overflow: hidden;
+  .image-box {
+    position: relative;
+    width: 200rpx;
+    height: 200rpx;
+    border-radius: 12rpx;
+    overflow: hidden;
+    background-color: #f8fafc;
 
-      &.main-image {
-        border: 2rpx solid #27ba9b;
-      }
-
-      .image {
-        width: 100%;
-        height: 100%;
-      }
-
-      .image-remove {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 40rpx;
-        height: 40rpx;
-        background-color: rgba(0, 0, 0, 0.5);
-        border-bottom-left-radius: 40rpx;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-
-      .main-tag {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 40rpx;
-        line-height: 40rpx;
-        text-align: center;
-        font-size: 24rpx;
-        color: #fff;
-        background-color: rgba(39, 186, 155, 0.8);
-      }
+    &.main-image {
+      border: 2rpx solid #4a8cff;
     }
 
-    .upload-btn {
-      width: 210rpx;
-      height: 210rpx;
+    .preview-image {
+      width: 100%;
+      height: 100%;
+    }
+
+    .image-overlay {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40rpx;
+      height: 40rpx;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-bottom-left-radius: 40rpx;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      border: 1rpx dashed #ccc;
-      border-radius: 8rpx;
+    }
 
-      .upload-text {
-        font-size: 24rpx;
-        color: #999;
-        margin-top: 10rpx;
-      }
+    .main-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40rpx;
+      line-height: 40rpx;
+      text-align: center;
+      font-size: 24rpx;
+      color: #fff;
+      background-color: rgba(74, 140, 255, 0.8);
     }
   }
 
-  .uploading-text {
-    font-size: 24rpx;
-    color: #666;
-    margin-top: 10rpx;
-    text-align: center;
-  }
-
-  /* 表单元素样式 */
-  .form-item {
-    display: flex;
-    align-items: center;
-    padding: 30rpx 0;
-    border-bottom: 1rpx solid #f5f5f5;
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .label {
-      width: 160rpx;
-      font-size: 28rpx;
-      color: #333;
-    }
-
-    .input {
-      flex: 1;
-      font-size: 28rpx;
-    }
-
-    .picker-view {
-      flex: 1;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .placeholder {
-        color: #999;
-      }
-    }
-
-    .unit {
-      font-size: 28rpx;
-      color: #333;
-      margin-left: 10rpx;
-    }
-  }
-
-  /* 文本域样式 */
-  .textarea {
-    width: 100%;
+  .upload-box {
+    width: 200rpx;
     height: 200rpx;
-    margin-top: 20rpx;
-    padding: 20rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 2rpx dashed #ddd;
+    border-radius: 12rpx;
+    background-color: #f8fafc;
+
+    .upload-icon {
+      width: 60rpx;
+      height: 60rpx;
+      border-radius: 50%;
+      background-color: #f0f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16rpx;
+    }
+
+    .upload-text {
+      font-size: 26rpx;
+      color: #666;
+    }
+  }
+}
+
+.upload-progress {
+  margin-top: 30rpx;
+
+  progress {
+    width: 100%;
+  }
+
+  .progress-text {
+    display: block;
+    text-align: center;
+    font-size: 24rpx;
+    color: #4a8cff;
+    margin-top: 10rpx;
+  }
+}
+
+.form-section {
+  margin-bottom: 40rpx;
+  padding: 30rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 16rpx rgba(74, 140, 255, 0.06);
+
+  .section-title {
+    font-size: 30rpx;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 30rpx;
+  }
+}
+
+.form-row {
+  margin-bottom: 40rpx;
+  position: relative;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-label {
+    display: block;
     font-size: 28rpx;
-    background-color: #f9f9f9;
+    color: #555;
+    margin-bottom: 20rpx;
+  }
+
+  .form-input {
+    width: 100%;
+    height: 80rpx;
+    padding: 0 24rpx;
+    font-size: 28rpx;
+    color: #333;
+    background-color: #f8fafc;
     border-radius: 8rpx;
   }
 
@@ -413,27 +521,83 @@ const submitForm = async () => {
     text-align: right;
     font-size: 24rpx;
     color: #999;
+    margin-top: 10rpx;
   }
+}
 
-  /* 底部操作栏 */
-  .action-bar {
-    height: 120rpx;
-    padding: 20rpx 30rpx;
-    background-color: #fff;
-    box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+.form-picker {
+  .picker-content {
+    width: 100%;
+    height: 80rpx;
+    padding: 0 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #f8fafc;
+    border-radius: 8rpx;
 
-    .submit-btn {
-      height: 80rpx;
-      line-height: 80rpx;
-      font-size: 32rpx;
-      color: #fff;
-      background-color: #27ba9b;
-      border-radius: 40rpx;
+    .selected-value {
+      color: #333;
+    }
 
-      &[disabled] {
-        opacity: 0.6;
-      }
+    .placeholder {
+      color: #ccc;
     }
   }
+}
+
+.price-input {
+  display: flex;
+  align-items: center;
+
+  .currency-symbol {
+    font-size: 32rpx;
+    color: #4a8cff;
+    margin-right: 16rpx;
+  }
+}
+
+.description-box {
+  width: 100%;
+  height: 240rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+  color: #333;
+  background-color: #f8fafc;
+  border-radius: 8rpx;
+  margin-bottom: 10rpx;
+}
+
+.description-footer {
+  display: flex;
+  justify-content: space-between;
+
+  .description-tip {
+    font-size: 24rpx;
+    color: #4a8cff;
+  }
+}
+
+.action-bar {
+  padding: 20rpx 30rpx;
+  background-color: #fff;
+  border-top: 1rpx solid #f0f4ff;
+
+  .submit-button {
+    height: 90rpx;
+    line-height: 90rpx;
+    font-size: 32rpx;
+    color: #fff;
+    background-color: #4a8cff;
+    border-radius: 45rpx;
+
+    &[disabled] {
+      background-color: #c0d4ff;
+    }
+  }
+}
+
+.placeholder {
+  color: #ccc;
 }
 </style>

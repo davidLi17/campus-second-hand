@@ -86,6 +86,31 @@
         "navigationBarTitleText": "创建订单"
       }
     },
+    // 保留 feature_0518_LYS 分支的订单相关页面
+    {
+      "path": "pages/order/confirm",
+      "style": {
+        "navigationBarTitleText": "确认订单"
+      }
+    },
+    {
+      "path": "pages/order/pay",
+      "style": {
+        "navigationBarTitleText": "支付订单"
+      }
+    },
+    {
+      "path": "pages/order/result",
+      "style": {
+        "navigationBarTitleText": "支付结果"
+      }
+    },
+    {
+      "path": "pages/order/select_address",
+      "style": {
+        "navigationBarTitleText": "选择地址"
+      }
+    },
     {
       "path": "pages/request/request",
       "style": {
@@ -96,6 +121,43 @@
       "path": "pages/qiugou/qiugou",
       "style": {
         "navigationBarTitleText": "求购页面"
+      }
+    },
+    // 继续保留 feature_0518_LYS 的订单功能
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/category/subCategoryDetail",
+      "style": {
+        "navigationBarTitleText": "二级分类详情"
+      }
+    },
+    {
+      "path": "pages/order/logistics",
+      "style": {
+        "navigationBarTitleText": "物流信息"
+      }
+    },
+    {
+      "path": "pages/order/evaluate",
+      "style": {
+        "navigationBarTitleText": "商品评价"
+      }
+    },
+    {
+      "path": "pages/common/webview",
+      "style": {
+        "navigationBarTitleText": "支付中..."
       }
     }
   ],
@@ -156,7 +218,7 @@
         {
           "path": "address_edit",
           "style": {
-            "navigationBarTitleText": "address_edit"
+            "navigationBarTitleText": "编辑地址"
           }
         }
       ]
@@ -219,7 +281,7 @@
       },
       {
         "text": "求购",
-        "pagePath": "pages/qiugou/qiugou",
+        "pagePath": "pages/request/request",
         "iconPath": "static/tabs/cart_default.png",
         "selectedIconPath": "static/tabs/cart_selected.png"
       },

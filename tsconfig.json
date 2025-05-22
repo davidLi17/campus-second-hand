@@ -28,7 +28,8 @@
       "miniprogram-api-typings", // 微信小程序类型声明
       "@uni-helper/uni-app-types", // uni-app 辅助类型声明
       "@uni-helper/uni-ui-types" // uni-ui 组件库类型声明
-    ]
+    ],
+    "typeRoots": ["./node_modules/@types/", "./src/types"]
   },
   "vueCompilerOptions": {
     "nativeTags": ["block", "component", "template", "slot"],

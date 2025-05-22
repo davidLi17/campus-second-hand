@@ -1,13 +1,29 @@
-<!-- src/pages/goods/detail.vue -->
-<script setup lang="ts">
+// 1. 框架相关
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
-import { getGoodsDetailAPI } from '@/api/goods'
 
-import type Api from '@/types/index'
-import { ShoppingCartPostAdd } from '@/services/services.ts'
-import { responseCode } from '@/types/schema.d'
+// 2. API 相关
+import { getGoodsDetailAPI } from '@/api/goods'
 import { createSessionAPI } from '@/api/chat'
+
+// 3. 状态管理
+import { useMemberStore } from '@/stores/member'
+
+// 4. 服务方法
+import {
+  ShoppingCartGetList,
+  ShoppingCartPostAdd,
+  ShoppingCartDeleteDelete,
+  ShoppingCartPutUpdate,
+} from '@/services/services.ts'
+
+// 5. 类型定义
+import type Api from '@/types/index'
+import { responseCode } from '@/types/schema.d'
+
+// 6. 组件
+import MessageBoard from './MessageBoard.vue'
+
 
 // 商品详情数据
 const goodsDetail = ref<{
@@ -45,7 +61,9 @@ onLoad((options) => {
     return
   }
 
-  if (options) fetchGoodsDetail(Number(options.id))
+  if (options) {
+    fetchGoodsDetail(Number(options.id))
+  }
 })
 
 // 获取商品详情
@@ -131,19 +149,6 @@ const contactSeller = async () => {
   })
 }
 
-// 收藏商品
-const toggleCollect = () => {
-  if (!goodsDetail.value) return
-
-  uni.showToast({
-    title: goodsDetail.value.collectCount > 0 ? '已取消收藏' : '已收藏',
-    icon: 'none',
-  })
-
-  // 实际项目中这里调用收藏API
-  // toggleCollectAPI(goodsDetail.value.id)
-}
-
 // 查看分类
 const viewCategory = () => {
   if (!goodsDetail.value) return
@@ -214,6 +219,9 @@ const viewCategory = () => {
         <button class="contact-btn" @click="contactSeller">联系卖家</button>
       </view>
 
+      <!-- 使用留言组件 -->
+      <MessageBoard :product-id="goodsDetail.id" />
+
       <!-- 商品详情 -->
       <view class="detail-section">
         <text class="section-title">商品详情</text>
@@ -228,14 +236,6 @@ const viewCategory = () => {
 
       <!-- 底部操作栏 -->
       <view class="action-bar">
-        <view class="action-icon" @click="toggleCollect">
-          <uni-icons
-            :type="goodsDetail.collectCount > 0 ? 'heart-filled' : 'heart'"
-            size="24"
-            :color="goodsDetail.collectCount > 0 ? '#f03c3c' : '#666'"
-          />
-          <text>收藏</text>
-        </view>
         <view class="quantity-control">
           <button class="quantity-btn" @click="changeQuantity('minus')">-</button>
           <text class="quantity">{{ quantity }}</text>
@@ -407,20 +407,6 @@ const viewCategory = () => {
     background-color: #fff;
     box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
     z-index: 10;
-
-    .action-icon {
-      width: 120rpx;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-
-      text {
-        font-size: 20rpx;
-        color: #666;
-        margin-top: 4rpx;
-      }
-    }
 
     .quantity-control {
       display: flex;

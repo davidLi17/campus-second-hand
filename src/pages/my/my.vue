@@ -8,14 +8,14 @@ console.log('LHG:my/my.vue  memberStore:::', memberStore)
 
 // 功能菜单项
 const menus = ref([
-  { icon: 'shop', name: '我发布的', url: '/pages-sub/my/goods?type=published' },
-  { icon: 'cart', name: '我卖出的', url: '/pages-sub/my/goods?type=sold' },
-  { icon: 'bag', name: '我买到的', url: '/pages-sub/my/goods?type=bought' },
-  { icon: 'heart', name: '我的收藏', url: '/pages-sub/my/favorites' },
+  { icon: 'shop', name: '我的商品', url: '/pages-sub/my/goods?type=published' },
+  // { icon: 'cart', name: '我卖出的', url: '/pages-sub/my/goods?type=sold' },
+  { icon: 'cart', name: '我的订单', url: '/pages/order/list' },
+  // { icon: 'heart', name: '我的收藏', url: '/pages-sub/my/favorites' },
   { icon: 'cart', name: '购物车', url: '/pages-sub/my/cart' },
   { icon: 'chat', name: '我的消息', url: '/pages-sub/message/message', badge: 3 },
   { icon: 'location', name: '收货地址', url: '/pages-sub/my/address' },
-  { icon: 'settings', name: '账号设置', url: '/pages-sub/my/settings' },
+  // { icon: 'settings', name: '账号设置', url: '/pages-sub/my/settings' },
   { icon: 'help', name: '帮助中心', url: '/pages-sub/my/help' },
 ])
 
@@ -51,7 +51,7 @@ const handleMenuClick = (url: string) => {
       <view class="avatar-wrapper">
         <image
           class="avatar"
-          :src="memberStore.profile?.avatar || '/static/images/default-avatar.png'"
+          :src="memberStore.profile?.userPic || '/static/images/default-avatar.png'"
           mode="aspectFill"
         />
         <text class="update-text">点击修改</text>
@@ -69,7 +69,7 @@ const handleMenuClick = (url: string) => {
     </view>
 
     <!-- 数据统计区域 -->
-    <view class="stats-section" v-if="memberStore.isLogin">
+    <!-- <view class="stats-section" v-if="memberStore.isLogin">
       <view class="stat-item">
         <text class="number">24</text>
         <text class="label">在售商品</text>
@@ -86,7 +86,7 @@ const handleMenuClick = (url: string) => {
         <text class="number">{{ memberStore.profile?.creditScore || 100 }}</text>
         <text class="label">信用分</text>
       </view>
-    </view>
+    </view> -->
 
     <!-- 功能菜单区域 -->
     <view class="menu-section">

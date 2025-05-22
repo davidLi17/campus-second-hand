@@ -62,6 +62,11 @@ const gotoDetail = (id: number) => {
   })
 }
 
+const navigateToGoodsList = (categoryId: number) => {
+  uni.switchTab({
+    url: '/pages/category/category',
+  })
+}
 const onRefresh = async () => {
   goodsList.value = []
   currentPage.value = 1

@@ -1,29 +1,19 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { searchGoodsAPI } from '@/api/goods'
-
-// 定义商品类型
-interface GoodsItem {
-  id: number
-  name: string
-  price: number
-  picture: string
-  sellerName: string
-  likeCount: number
-  categoryName: string
-}
+import { searchApi, type GoodDoc } from '@/api/search'
+// import type { GoodDoc } from '@/types/goods'
 
 // 搜索参数
 const searchParams = ref({
-  name: '',
+  keyword: '', // 修改为keyword以匹配API
   page: 1,
   pageSize: 10,
 })
 
 // 搜索结果
 const searchResult = ref<{
-  items: GoodsItem[]
+  items: GoodDoc[]
   total: number
   pages: number
 }>({
@@ -38,8 +28,8 @@ const finished = ref(false)
 
 // 页面加载时获取初始搜索参数
 onLoad((options) => {
-  if (options?.name) {
-    searchParams.value.name = options.name
+  if (options?.keyword) {
+    searchParams.value.keyword = options.keyword
     doSearch()
   }
 })
@@ -51,21 +41,31 @@ const doSearch = async () => {
   loading.value = true
 
   try {
-    const res = await searchGoodsAPI(searchParams.value)
+    // 对中文关键词进行编码
+    // const encodedKeyword = encodeURIComponent(searchParams.value.keyword)
 
+    const res = await searchApi({
+      keyword: searchParams.value.keyword,
+      page: searchParams.value.page,
+      pageSize: searchParams.value.pageSize,
+    })
+
+    // 根据API响应结构调整
     if (res.code === 0) {
       // 如果是第一页，重置数据
       if (searchParams.value.page === 1) {
-        searchResult.value.items = res.data.items
+        searchResult.value.items = res.data
       } else {
-        searchResult.value.items.push(...res.data.items)
+        searchResult.value.items.push(...res.data)
       }
 
-      searchResult.value.total = res.data.total
-      searchResult.value.pages = res.data.pages
+      // 注意：API文档中没有返回total和pages，需要根据实际情况调整
+      // 这里假设API返回了完整数据，可能需要根据实际API调整
+      searchResult.value.total = res.data.length
+      searchResult.value.pages = Math.ceil(res.data.length / searchParams.value.pageSize)
 
       // 检查是否还有更多数据
-      if (searchParams.value.page >= res.data.pages) {
+      if (searchParams.value.page >= searchResult.value.pages) {
         finished.value = true
       }
     }
@@ -92,7 +92,7 @@ const loadMore = () => {
 // 跳转商品详情
 const gotoDetail = (id: number) => {
   uni.navigateTo({
-    url: `/pages-sub/goods/detail?id=${id}`,
+    url: `/pages/goods/detail?id=${id}`,
   })
 }
 </script>
@@ -102,14 +102,14 @@ const gotoDetail = (id: number) => {
     <!-- 搜索框 -->
     <view class="search-box">
       <uni-search-bar
-        v-model="searchParams.name"
-        placeholder="搜索教材、电子产品..."
+        v-model="searchParams.keyword"
+        placeholder="搜索商品名称、描述、分类"
         @confirm="handleSearch"
-        @cancel="uni.navigateBack()"
+        @cancel="handleCancel"
         cancel-text="取消"
         bgColor="#f5f5f5"
         radius="40"
-      />
+      ></uni-search-bar>
     </view>
 
     <!-- 搜索结果 -->
@@ -122,15 +122,15 @@ const gotoDetail = (id: number) => {
           :key="item.id"
           @click="gotoDetail(item.id)"
         >
-          <image class="goods-image" :src="item.picture" mode="aspectFill" />
+          <image class="goods-image" :src="item.picture" mode="aspectFill"></image>
           <view class="goods-info">
             <view class="goods-name">{{ item.name }}</view>
             <view class="goods-price">¥{{ item.price }}</view>
-            <view class="goods-seller">{{ item.sellerName }}</view>
+            <view class="goods-desc">{{ item.desc }}</view>
             <view class="goods-meta">
-              <text class="category">{{ item.categoryName }}</text>
+              <text class="category">{{ item.parentName }} - {{ item.categoryName }}</text>
               <text class="likes">
-                <uni-icons type="heart" size="14" color="#999" />
+                <uni-icons type="heart" size="14" color="#999"></uni-icons>
                 {{ item.likeCount }}
               </text>
             </view>
@@ -139,13 +139,15 @@ const gotoDetail = (id: number) => {
 
         <!-- 加载状态 -->
         <view class="load-status">
-          <uni-load-more :status="loading ? 'loading' : finished ? 'noMore' : 'more'" />
+          <uni-load-more
+            :status="loading ? 'loading' : finished ? 'noMore' : 'more'"
+          ></uni-load-more>
         </view>
       </view>
 
       <!-- 空状态 -->
       <view class="empty" v-if="!loading && searchResult.items.length === 0">
-        <image src="/static/images/empty-search.png" mode="aspectFit" />
+        <image src="/static/images/empty-search.png" mode="aspectFit"></image>
         <text class="empty-text">没有找到相关商品</text>
       </view>
     </scroll-view>
@@ -192,7 +194,6 @@ const gotoDetail = (id: number) => {
 
         .goods-name {
           font-size: 28rpx;
-
           line-height: 1.4;
         }
 
@@ -203,9 +204,10 @@ const gotoDetail = (id: number) => {
           margin: 10rpx 0;
         }
 
-        .goods-seller {
+        .goods-desc {
           font-size: 24rpx;
           color: #666;
+          margin-bottom: 10rpx;
         }
 
         .goods-meta {
