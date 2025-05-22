@@ -32,6 +32,9 @@ const loading = ref(false)
 const finished = ref(false)
 const currentPage = ref(1)
 
+// 默认商品图片路径
+const DEFAULT_GOODS_IMAGE = '/static/images/default-goods.jpg'
+
 const fetchGoodsList = async () => {
   if (loading.value || finished.value) return
 
@@ -67,11 +70,17 @@ const navigateToGoodsList = (categoryId: number) => {
     url: '/pages/category/category',
   })
 }
+
 const onRefresh = async () => {
   goodsList.value = []
   currentPage.value = 1
   finished.value = false
   await fetchGoodsList()
+}
+
+// 图片加载失败处理
+const handleImageError = (item: GoodsItem) => {
+  item.picture = DEFAULT_GOODS_IMAGE
 }
 
 // 初始化加载
@@ -114,7 +123,14 @@ watch(
         class="goods-item"
         @click="gotoDetail(item.id)"
       >
-        <image class="goods-image" :src="item.picture" mode="aspectFill" lazy-load />
+        <image
+          class="goods-image"
+          :src="item.picture"
+          mode="aspectFill"
+          lazy-load
+          @error="handleImageError(item)"
+          :onerror="DEFAULT_GOODS_IMAGE"
+        />
         <view class="goods-info">
           <text class="goods-name">{{ item.name }}</text>
           <text class="goods-price">¥{{ item.price }}</text>
@@ -181,6 +197,7 @@ watch(
         height: 200rpx;
         border-radius: 8rpx;
         margin-right: 20rpx;
+        background-color: #f5f5f5;
       }
 
       .goods-info {
