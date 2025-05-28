@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useMemberStore } from '@/stores/member'
-import { PurchaseGoodsGetAll } from '@/services/services.ts'
+import { PurchaseGoodsGetAll, PurchaseGoodsPostCreate } from '@/services/services.ts'
 import type Api from '@/types/index'
 import { uploadFileAPI } from '@/api/upload'
 import { CATEGORY_OPTIONS, GoodsCategory } from '@/types/enums'
@@ -49,8 +49,8 @@ const uploadImage = async () => {
     }
 
     const compressedPath = await compressImage(filePath)
-    const { url } = await uploadFileAPI(compressedPath)
-    formData.value.image = url
+    const { data } = await uploadFileAPI(compressedPath)
+    formData.value.image = data
   } catch (error: any) {
     uni.showToast({
       title: error.message || '上传失败',
@@ -142,13 +142,14 @@ const submitForm = async () => {
       updateTime: Date.now(),
     }
 
-    await PurchaseGoodsGetAll(submitData)
+    const res = await PurchaseGoodsPostCreate(submitData)
+    console.log('LHG:request/request.vue res:::', res)
 
     uni.hideLoading()
-    uni.showToast({ title: '发布成功', icon: 'success' })
+    uni.showToast({ title: `发布成功,商品描述是${res.desc}`, icon: 'success' })
 
     setTimeout(() => {
-      uni.switchTab({ url: '/pages/index/index' })
+      uni.redirectTo({ url: '/pages/qiugou/qiugou' })
     }, 1500)
   } catch (error: any) {
     uni.hideLoading()
@@ -209,11 +210,11 @@ const submitForm = async () => {
             mode="selector"
             :range="categories"
             range-key="name"
-            @change="(e) => (formData.categoryId = categories[e.detail.value].id)"
+            @change="(e: any) => (formData.sort = categories[e.detail.value].id)"
           >
             <view class="picker-view">
-              <text v-if="formData.categoryId">
-                {{ categories.find((c) => c.id === formData.categoryId)?.name }}
+              <text v-if="formData.sort">
+                {{ categories.find((c) => c.id === formData.sort)?.name }}
               </text>
               <text v-else class="placeholder">请选择商品分类</text>
               <uni-icons type="arrowright" size="16" color="#999" />

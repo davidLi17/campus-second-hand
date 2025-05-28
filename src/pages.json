@@ -123,6 +123,14 @@
         "navigationBarTitleText": "求购页面"
       }
     },
+    {
+      "path": "pages/qiugou/qiugou-detail",
+      "style": {
+        "navigationBarTitleText": "求购详情",
+        "navigationBarBackgroundColor": "#ffffff",
+        "navigationBarTextStyle": "black"
+      }
+    },
     // 继续保留 feature_0518_LYS 的订单功能
     {
       "path": "pages/order/detail",
@@ -280,8 +288,8 @@
         "selectedIconPath": "static/tabs/category_selected.png"
       },
       {
-        "text": "求购",
-        "pagePath": "pages/request/request",
+        "text": "求购商品",
+        "pagePath": "pages/qiugou/qiugou",
         "iconPath": "static/tabs/cart_default.png",
         "selectedIconPath": "static/tabs/cart_selected.png"
       },

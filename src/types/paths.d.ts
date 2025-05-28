@@ -539,7 +539,7 @@ export namespace Paths {
     interface Request {}
 
     /** 响应 */
-    type Response = Api.Schema.PurchaseGoods[]
+    type Response = Api.Schema.ResultListPurchaseGoods
   }
 
   /**

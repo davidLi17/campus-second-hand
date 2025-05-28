@@ -39,14 +39,11 @@ onMounted(() => {
         @tap="navigateToChat(session)"
       >
         <view class="avatar-wrapper">
-          <image
-            class="avatar"
-            :src="session.contactAvatar || '/static/images/default-avatar.png'"
-            mode="aspectFill"
-          />
-          <view v-if="session.unreadCount && session.unreadCount > 0" class="unread-badge">
+          <image class="avatar" src="/static/images/default-avatar.png" mode="aspectFill" />
+          <!-- 暂时移除未读消息徽章，因为接口暂不支持 -->
+          <!-- <view v-if="session.unreadCount && session.unreadCount > 0" class="unread-badge">
             {{ session.unreadCount > 99 ? '99+' : session.unreadCount }}
-          </view>
+          </view> -->
         </view>
         <view class="content">
           <view class="top-line">
@@ -54,7 +51,7 @@ onMounted(() => {
             <text class="time">{{ formatTime(session.lastUpdateDate) }}</text>
           </view>
           <view class="bottom-line">
-            <text class="last-message">{{ session.lastMessage || '暂无消息' }}</text>
+            <text class="last-message">点击开始聊天</text>
           </view>
         </view>
       </view>

@@ -1,4 +1,4 @@
-// 1. 框架相关
+<script lang="ts" setup>
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -24,6 +24,8 @@ import { responseCode } from '@/types/schema.d'
 // 6. 组件
 import MessageBoard from './MessageBoard.vue'
 
+// 实例化store
+const memberStore = useMemberStore()
 
 // 商品详情数据
 const goodsDetail = ref<{
@@ -75,7 +77,17 @@ const fetchGoodsDetail = async (id: number) => {
     const res = await getGoodsDetailAPI(id)
 
     if (res.code === 0 && res.data) {
-      goodsDetail.value = res.data
+      // 获取卖家信息：如果是当前用户发布的商品，显示真实信息，否则使用接口返回的信息
+      const isCurrentUser = memberStore.profile?.id === res.data.sellerId
+      const sellerName = isCurrentUser
+        ? memberStore.profile?.nickname || memberStore.profile?.username || res.data.sellerName
+        : res.data.sellerName
+
+      goodsDetail.value = {
+        ...res.data,
+        sellerName: sellerName,
+      }
+
       uni.setNavigationBarTitle({
         title: res.data.name,
       })
@@ -144,9 +156,34 @@ const contactSeller = async () => {
     })
     return
   }
-  const res = await createSessionAPI({
-    toUser: goodsDetail.value.sellerId,
-  })
+
+  try {
+    uni.showLoading({ title: '正在创建会话...' })
+
+    const res = await createSessionAPI({
+      toUser: goodsDetail.value.sellerId,
+    })
+
+    uni.hideLoading()
+
+    if (res.code === 0) {
+      // 创建会话成功，跳转到聊天详情页面
+      uni.navigateTo({
+        url: `/pages-sub/chat/chat-detail?sessionId=${res.data}&contactName=${goodsDetail.value.sellerName}&contactId=${goodsDetail.value.sellerId}`,
+      })
+    } else {
+      uni.showToast({
+        title: res.message || '创建会话失败',
+        icon: 'none',
+      })
+    }
+  } catch (error: any) {
+    uni.hideLoading()
+    uni.showToast({
+      title: error.message || '联系卖家失败',
+      icon: 'none',
+    })
+  }
 }
 
 // 查看分类

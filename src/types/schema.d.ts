@@ -343,7 +343,6 @@ export namespace Schema {
     username: string
   }
 
-  // 使用泛型 Result 替换原有的 Result 类型
   type ResultAddressBook = Result<AddressBook>
   type ResultListAddressBook = Result<AddressBook[]>
   type ResultPageResultAddressBook = Result<PageResult<AddressBook>>
@@ -385,4 +384,6 @@ export namespace Schema {
   type ResultListShoppingCart = Result<ShoppingCart[]>
 
   type Resultstring = Result<string>
+
+  type ResultListPurchaseGoods = Result<PurchaseGoods[]>
 }
