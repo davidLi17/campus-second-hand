@@ -1,8 +1,21 @@
 <template>
   <div class="qiugou-container">
+    <!-- 加载状态 -->
+    <view class="loading-container" v-if="loading && goodsList.length === 0">
+      <uni-load-more
+        status="loading"
+        content-text="{ contentText: { contentdown: '下拉刷新', contentrefresh: '正在刷新...', contentnomore: '没有更多数据了' } }"
+      ></uni-load-more>
+    </view>
+
     <!-- 商品列表 -->
     <view class="goods-list" v-if="goodsList.length > 0">
-      <view v-for="item in goodsList" :key="item.id" class="goods-item" @click="navigateToDetail(item.id)">
+      <view
+        v-for="item in goodsList"
+        :key="item.id"
+        class="goods-item"
+        @click="navigateToDetail(item.id)"
+      >
         <image class="goods-image" :src="item.image" mode="aspectFill"></image>
         <view class="goods-info">
           <view class="goods-desc">{{ item.desc }}</view>
@@ -18,15 +31,19 @@
         </view>
       </view>
     </view>
-    <view class="empty-info" v-else>
+
+    <!-- 空状态 -->
+    <view class="empty-info" v-else-if="!loading">
       <image
         class="empty-img"
         src="https://cdn.jsdelivr.net/gh/xiangyuecn/areaicon/empty-box.svg"
         mode="widthFix"
       ></image>
       <text class="empty-text">暂无求购信息</text>
+      <text class="empty-tip">下拉可以刷新数据</text>
     </view>
 
+    <!-- 发布求购按钮 -->
     <view class="add-request-btn" @click="navigateToRequest">
       <text>发布求购</text>
     </view>
@@ -38,78 +55,89 @@ import type Api from '@/types/index.d.ts'
 import { PurchaseGoodsGetAll } from '@/services/services.ts'
 import { responseCode } from '@/types/schema.d'
 import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 
 const navigateToRequest = () => {
   uni.navigateTo({
     url: '/pages/request/request',
   })
 }
-const navigateToDetail = (id: number) => {
+const navigateToDetail = (id: number | undefined) => {
+  if (!id) {
+    uni.showToast({
+      title: '商品ID无效',
+      icon: 'none',
+    })
+    return
+  }
   uni.navigateTo({
     url: `/pages/qiugou/qiugou-detail?id=${id}`,
   })
 }
 
 const goodsList = ref<Api.Paths.AGetPurchase.Response['data']>([])
+const loading = ref(false)
 
 async function fetchGoodsList() {
-  const response = await PurchaseGoodsGetAll()
-  if (response.code === responseCode.SUCCESS) {
-    goodsList.value = response.data
-  } else {
+  try {
+    loading.value = true
+    const response = await PurchaseGoodsGetAll()
+    if (response.code === responseCode.SUCCESS) {
+      goodsList.value = response.data
+    } else {
+      uni.showToast({
+        title: '获取商品列表失败',
+        icon: 'none',
+      })
+      goodsList.value = [
+        {
+          id: 3,
+          userId: 1003,
+          name: '陈雨浩',
+          desc: '运动款蓝牙耳机，降噪功能，续航12小时',
+          price: 599.0,
+          sort: 15,
+          count: 50,
+          status: 0,
+          transaction: 300,
+          image: 'https://example.com/image3.jpg',
+          createTime: 1695811200000,
+          updateTime: 1695811200000,
+        },
+      ]
+    }
+  } catch (error) {
+    console.error('获取求购列表失败:', error)
     uni.showToast({
-      title: '获取商品列表失败',
+      title: '网络错误，请重试',
       icon: 'none',
     })
-    goodsList.value = [
-      {
-        id: 3,
-        userId: 1003,
-        name: '陈雨浩',
-        desc: '运动款蓝牙耳机，降噪功能，续航12小时',
-        price: 599.0, // 整数价格，适合数码产品
-        sort: 15, // 排序中等
-        count: 50, // 库存较低，模拟缺货预警
-        status: 0, // 下架状态（库存不足自动下架）
-        transaction: 300, // 销量一般
-        image: 'https://example.com/image3.jpg',
-        createTime: 1695811200000, // 更早的创建时间
-        updateTime: 1695811200000, // 未更新过
-      },
-      {
-        id: 4,
-        userId: 1004,
-        name: '李诗雨',
-        desc: '大容量双肩背包，防水面料，适合学生党',
-        price: 159.8, // 低价商品
-        sort: 20, // 排序靠后
-        count: 300, // 库存充足
-        status: 1, // 在售
-        transaction: 500, // 中等销量
-        image: 'https://example.com/image4.jpg',
-        createTime: 1695964800000, // 近期创建
-        updateTime: 1695964800000, // 未更新
-      },
-      {
-        id: 5,
-        userId: 1005,
-        name: '王宇航',
-        desc: '智能手表，血氧监测，长续航15天',
-        price: 1299.99, // 高价商品
-        sort: 5, // 排序靠前（主推商品）
-        count: 80, // 库存中等
-        status: 2, // 预售状态（新品未上架）
-        transaction: 50, // 预售订单少
-        image: 'https://example.com/image5.jpg',
-        createTime: 1696051200000, // 未来时间（预售商品）
-        updateTime: 1696051200000, // 未更新
-      },
-    ]
+  } finally {
+    loading.value = false
   }
 }
 
-onLoad(() => {
+// 下拉刷新处理
+onPullDownRefresh(async () => {
+  try {
+    await fetchGoodsList()
+    uni.showToast({
+      title: '刷新成功',
+      icon: 'success',
+      duration: 1500,
+    })
+  } catch (error) {
+    uni.showToast({
+      title: '刷新失败',
+      icon: 'none',
+    })
+  } finally {
+    // 停止下拉刷新动画
+    uni.stopPullDownRefresh()
+  }
+})
+
+onShow(() => {
   fetchGoodsList()
 })
 </script>
@@ -119,6 +147,14 @@ onLoad(() => {
   padding: 10px;
   background-color: #f7f7f7;
   min-height: 100vh;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 40px 0;
 }
 
 .goods-list {
@@ -247,6 +283,12 @@ onLoad(() => {
 }
 .empty-text {
   font-size: 16px;
+  color: #bbb;
+  margin-top: 6px;
+  letter-spacing: 1px;
+}
+.empty-tip {
+  font-size: 14px;
   color: #bbb;
   margin-top: 6px;
   letter-spacing: 1px;

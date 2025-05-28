@@ -120,7 +120,8 @@
     {
       "path": "pages/qiugou/qiugou",
       "style": {
-        "navigationBarTitleText": "求购页面"
+        "navigationBarTitleText": "求购页面",
+        "enablePullDownRefresh": true
       }
     },
     {

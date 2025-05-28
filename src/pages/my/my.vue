@@ -13,7 +13,7 @@ const menus = ref([
   { icon: 'cart', name: '我的订单', url: '/pages/order/list' },
   // { icon: 'heart', name: '我的收藏', url: '/pages-sub/my/favorites' },
   { icon: 'cart', name: '购物车', url: '/pages-sub/my/cart' },
-  { icon: 'chat', name: '我的消息', url: '/pages-sub/message/message', badge: 3 },
+  { icon: 'chat', name: '我的消息', url: '/pages/message/message' },
   { icon: 'location', name: '收货地址', url: '/pages-sub/my/address' },
   // { icon: 'settings', name: '账号设置', url: '/pages-sub/my/settings' },
   { icon: 'help', name: '帮助中心', url: '/pages-sub/my/help' },
@@ -39,6 +39,13 @@ const toEditProfile = () => {
 
 // 处理菜单点击
 const handleMenuClick = (url: string) => {
+  // 消息页面是tabBar页面，使用switchTab
+  if (url === '/pages/message/message') {
+    uni.switchTab({ url })
+    return
+  }
+
+  // 其他页面需要登录
   if (!memberStore.isLogin) return toLogin()
   uni.navigateTo({ url })
 }
@@ -59,8 +66,8 @@ const handleMenuClick = (url: string) => {
 
       <view class="info" v-if="memberStore.isLogin">
         <text class="nickname">{{ memberStore.profile?.nickname || '未设置昵称' }}</text>
-        <text class="account">学号: {{ memberStore.profile?.studentId || '未绑定' }}</text>
-        <text class="school">{{ memberStore.profile?.schoolName || '未设置学校' }}</text>
+        <text class="account">学号: {{ memberStore.profile?.username || '未设置学号' }}</text>
+        <text class="school">{{ memberStore.profile?.phone || '未设置手机号' }}</text>
       </view>
 
       <view class="login-btn" v-else>
@@ -99,7 +106,7 @@ const handleMenuClick = (url: string) => {
         <uni-icons class="icon" :type="item.icon" size="20" color="#666" />
         <text class="name">{{ item.name }}</text>
         <uni-icons class="arrow" type="arrowright" size="16" color="#999" />
-        <text class="badge" v-if="item.badge">{{ item.badge }}</text>
+        <!-- <text class="badge" v-if="item.badge">{{ item.badge }}</text> -->
       </view>
     </view>
 

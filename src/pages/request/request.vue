@@ -146,11 +146,11 @@ const submitForm = async () => {
     console.log('LHG:request/request.vue res:::', res)
 
     uni.hideLoading()
-    uni.showToast({ title: `发布成功,商品描述是${res.desc}`, icon: 'success' })
+    uni.showToast({ title: `发布成功,商品描述是${res.desc}`, icon: 'success', duration: 1200 })
 
     setTimeout(() => {
-      uni.redirectTo({ url: '/pages/qiugou/qiugou' })
-    }, 1500)
+      uni.switchTab({ url: '/pages/qiugou/qiugou' })
+    }, 1200)
   } catch (error: any) {
     uni.hideLoading()
     uni.showToast({
