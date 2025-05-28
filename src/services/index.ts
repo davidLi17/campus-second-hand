@@ -1,40 +1,49 @@
+// src/utils/http.ts (完整改进版)
 import { useMemberStore } from '@/stores/member'
 
-// 请求基地址
 const baseURL = 'http://101.126.18.51:9990'
 
-// 拦截器配置
-const httpInterceptor = {
-  // 拦截前处理
-  invoke(options: UniApp.RequestOptions) {
-    // 添加请求头
-    if (!options.header) {
-      options.header = {}
-    }
+// 白名单：不需要登录验证的接口路径
+const whiteList = ['/login', '/register', '/email/send', '/email/verify']
 
-    // 添加token
+// 检查URL是否在白名单中
+const isInWhiteList = (url: string): boolean => {
+  return whiteList.some((path) => url.includes(path))
+}
+
+const httpInterceptor = {
+  invoke(options: UniApp.RequestOptions & { params?: Record<string, any> }) {
     const memberStore = useMemberStore()
+
+    if (!options.header) options.header = {}
+
+    // 添加 Token
     if (memberStore.token) {
       options.header.Authorization = `${memberStore.token}`
     }
-    if (!memberStore.token && !options.url.includes('/login')) {
-      uni.showToast({
-        title: '请先登录',
-        icon: 'error',
-      })
-      // 保存当前页面路径
+
+    // 未登录拦截 - 使用白名单检查
+    if (!memberStore.token && !isInWhiteList(options.url)) {
+      uni.showToast({ title: '请先登录', icon: 'error' })
       uni.setStorageSync(
         'redirectUrl',
         `/${getCurrentPages()[getCurrentPages().length - 1]?.route}`,
       )
       setTimeout(() => {
-        uni.navigateTo({
-          url: '/pages/login/login',
-        })
+        uni.redirectTo({ url: '/pages/login/login' })
       }, 500)
       return Promise.reject(new Error('未登录'))
     }
-    // 超时时间
+
+    // GET 请求处理：将 params 转换为查询字符串
+    if (options.method?.toUpperCase() === 'GET' && options.params) {
+      const queryString = Object.entries(options.params)
+        .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
+        .join('&')
+      options.url += (options.url.includes('?') ? '&' : '?') + queryString
+      delete options.params
+    }
+
     options.timeout = 10000
     return options
   },

@@ -3,19 +3,27 @@ import { useMemberStore } from '@/stores/member'
 
 const baseURL = 'http://101.126.18.51:9990'
 
+// 白名单：不需要登录验证的接口路径
+const whiteList = ['/login', '/register', '/email/send', '/email/verify']
+
+// 检查URL是否在白名单中
+const isInWhiteList = (url: string): boolean => {
+  return whiteList.some((path) => url.includes(path))
+}
+
 const httpInterceptor = {
-  invoke(options: UniApp.RequestOptions) {
+  invoke(options: UniApp.RequestOptions & { params?: Record<string, any> }) {
     const memberStore = useMemberStore()
 
     if (!options.header) options.header = {}
 
     // 添加 Token
     if (memberStore.token) {
-      options.header.Authorization = `Bearer ${memberStore.token}`
+      options.header.Authorization = `${memberStore.token}`
     }
 
-    // 未登录拦截
-    if (!memberStore.token && !options.url.includes('/login')) {
+    // 未登录拦截 - 使用白名单检查
+    if (!memberStore.token && !isInWhiteList(options.url)) {
       uni.showToast({ title: '请先登录', icon: 'error' })
       uni.setStorageSync(
         'redirectUrl',
@@ -30,7 +38,7 @@ const httpInterceptor = {
     // GET 请求处理：将 params 转换为查询字符串
     if (options.method?.toUpperCase() === 'GET' && options.params) {
       const queryString = Object.entries(options.params)
-        .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+        .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
         .join('&')
       options.url += (options.url.includes('?') ? '&' : '?') + queryString
       delete options.params
@@ -119,7 +127,9 @@ export const http = <T>(options: UniApp.RequestOptions) => {
 
 // 封装常用的 HTTP 方法
 export const get = <T>(url: string, params?: Record<string, any>) => {
-  return http<T>({ url, method: 'GET', params })
+  return http<T>({ url, method: 'GET', params } as UniApp.RequestOptions & {
+    params?: Record<string, any>
+  })
 }
 
 export const post = <T>(url: string, data?: any) => {

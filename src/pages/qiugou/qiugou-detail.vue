@@ -18,6 +18,7 @@ import { CATEGORY_MAP } from '@/types/enums'
 
 // 组件
 import MessageBoard from '../goods/MessageBoard.vue'
+import { handleChatSessionError } from '@/utils/helpers'
 
 // 实例化store
 const memberStore = useMemberStore()
@@ -161,10 +162,7 @@ const contactBuyer = async () => {
         url: `/pages-sub/chat/chat-detail?sessionId=${res.data}&contactName=${goodsDetail.value.userName}&contactId=${goodsDetail.value.userId}`,
       })
     } else {
-      uni.showToast({
-        title: res.message || '创建会话失败',
-        icon: 'none',
-      })
+      handleChatSessionError(res)
     }
   } catch (error: any) {
     uni.hideLoading()

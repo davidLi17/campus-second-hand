@@ -1,4 +1,3 @@
-import { PageParams } from './../types/base'
 // src/api/order.ts
 import { http } from '@/utils/http'
 import { type AddressBook } from '@/api/address'

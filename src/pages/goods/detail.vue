@@ -24,6 +24,9 @@ import { responseCode } from '@/types/schema.d'
 // 6. 组件
 import MessageBoard from './MessageBoard.vue'
 
+// 7. 工具函数
+import { handleChatSessionError } from '@/utils/helpers'
+
 // 实例化store
 const memberStore = useMemberStore()
 
@@ -172,15 +175,16 @@ const contactSeller = async () => {
         url: `/pages-sub/chat/chat-detail?sessionId=${res.data}&contactName=${goodsDetail.value.sellerName}&contactId=${goodsDetail.value.sellerId}`,
       })
     } else {
-      uni.showToast({
-        title: res.message || '创建会话失败',
-        icon: 'none',
-      })
+      // 使用统一的错误处理函数
+      handleChatSessionError(res)
     }
   } catch (error: any) {
     uni.hideLoading()
+    console.error('联系卖家失败:', error)
+
+    // 处理网络错误或其他异常
     uni.showToast({
-      title: error.message || '联系卖家失败',
+      title: '网络异常，请稍后重试',
       icon: 'none',
     })
   }

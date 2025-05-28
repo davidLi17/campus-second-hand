@@ -67,7 +67,6 @@ export const loginApi = (params: LoginParams) => {
 export const registerApi = (params: RegisterParams) => {
   return http({
     method: 'POST',
-    url: '/user/register',
-    data: params,
+    url: `/user/register?username=${params.username}&password=${params.password}&email=${params.email}&code=${params.code}`,
   })
 }

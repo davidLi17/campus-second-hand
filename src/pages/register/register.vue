@@ -4,7 +4,7 @@ import { ref, onUnmounted } from 'vue'
 import { registerApi } from '@/api/auth'
 import { sendEmailApi } from '@/api/email'
 import type { RegisterParams } from '@/api/auth'
-
+import type { SendEmailResult } from '@/api/email'
 // 表单数据
 const form = ref<RegisterParams>({
   username: '',
@@ -18,7 +18,7 @@ const agree = ref(false)
 const loading = ref(false)
 const codeLoading = ref(false)
 const countdown = ref(0)
-const countdownTimer = ref<NodeJS.Timeout | null>(null)
+const countdownTimer = ref<number | null>(null)
 
 const onSubmit = async () => {
   if (!agree.value) {
@@ -33,13 +33,13 @@ const onSubmit = async () => {
     return uni.showToast({ title: '两次密码不一致', icon: 'none' })
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+  if (form.value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
     return uni.showToast({ title: '请输入有效的邮箱地址', icon: 'none' })
   }
 
   try {
     loading.value = true
-    const res = await registerApi(form.value)
+    const res = (await registerApi(form.value)) as SendEmailResult
 
     if (res.code === 0) {
       uni.showToast({ title: '注册成功', icon: 'success' })
@@ -55,6 +55,8 @@ const onSubmit = async () => {
 }
 
 const getVerificationCode = async () => {
+  console.log('点击获取验证码按钮')
+
   if (!form.value.email) {
     return uni.showToast({ title: '请输入邮箱地址', icon: 'none' })
   }
@@ -63,11 +65,12 @@ const getVerificationCode = async () => {
     return uni.showToast({ title: '请输入有效的邮箱地址', icon: 'none' })
   }
 
-  console.log('正在发送验证码...')
+  console.log('正在发送验证码...', form.value.email)
 
   try {
     codeLoading.value = true
     const res = await sendEmailApi({ email: form.value.email })
+    console.log('LHG:register/register.vue res:::', res)
 
     if (res.code === 0) {
       uni.showToast({ title: '验证码已发送', icon: 'success' })
@@ -76,6 +79,7 @@ const getVerificationCode = async () => {
       throw new Error(res.message || '发送验证码失败')
     }
   } catch (error: any) {
+    console.error('发送验证码失败:', error)
     uni.showToast({ title: error.message || '发送验证码失败', icon: 'none' })
   } finally {
     codeLoading.value = false
@@ -146,7 +150,7 @@ const toLogin = () => {
         <button
           class="code-btn"
           size="mini"
-          @tab="getVerificationCode"
+          @click="getVerificationCode"
           :disabled="countdown > 0 || codeLoading"
         >
           <template v-if="codeLoading">发送中...</template>
@@ -257,6 +261,7 @@ const toLogin = () => {
       .code-btn {
         position: absolute;
         right: 0;
+        width: 160rpx;
         height: 60rpx;
         line-height: 60rpx;
         font-size: 24rpx;
@@ -264,6 +269,10 @@ const toLogin = () => {
         background-color: #f0f9f7;
         border: none;
         border-radius: 30rpx;
+        padding: 0 20rpx;
+        text-align: center;
+        cursor: pointer;
+        z-index: 10;
 
         &[disabled] {
           color: #999;

@@ -14,9 +14,8 @@ import type {
  */
 export const createSessionAPI = (params: CreateSessionRequest) => {
   return http<CreateSessionResponse>({
-    url: '/chat/createSession',
+    url: `/chat/createSession?toUser=${params.toUser}`,
     method: 'POST',
-    data: params,
   })
 }
 
@@ -35,9 +34,8 @@ export const getSessionAPI = () => {
  */
 export const getMessageAPI = (params: GetMessageRequest) => {
   return http<GetMessageResponse>({
-    url: '/chat/getMessage',
+    url: `/chat/getMessage?sessionId=${params.sessionId}`,
     method: 'GET',
-    data: params,
   })
 }
 
